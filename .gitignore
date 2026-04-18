@@ -9,7 +9,6 @@ dist/
 *.egg-info/
 .eggs/
 *.egg
-frontend/package-lock.json
 
 # Virtual environments
 .venv/
