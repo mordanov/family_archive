@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useUploads } from '@/stores/uploadStore'
 import { formatBytes } from '@/lib/formatters'
 import { Pause, Play, X, ChevronDown, ChevronUp, Upload as UpIcon } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 
 export function UploadQueue() {
-  const items = useUploads((s) => Object.values(s.items))
+  const itemsMap = useUploads((s) => s.items)
+  const items = useMemo(() => Object.values(itemsMap), [itemsMap])
   const pause = useUploads((s) => s.pause)
   const resume = useUploads((s) => s.resume)
   const remove = useUploads((s) => s.remove)
