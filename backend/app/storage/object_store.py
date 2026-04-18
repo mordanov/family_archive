@@ -59,29 +59,41 @@ class ObjectStore:
     async def get_object_stream(
         self, key: str, range_header: str | None = None, chunk_size: int = 64 * 1024
     ) -> tuple[AsyncIterator[bytes], dict]:
-        """Return an async iterator over object bytes plus headers (status, length, range, content-type)."""
-        async with s3_client() as c:
+        """Return an async iterator over object bytes plus headers (status, length, range, content-type).
+
+        The S3 client context is kept open for the lifetime of the iterator, since
+        closing it would tear down the underlying aiohttp connection mid-stream.
+        """
+        cm = s3_client()
+        c = await cm.__aenter__()
+        try:
             kwargs = {"Bucket": self.bucket, "Key": key}
             if range_header:
                 kwargs["Range"] = range_header
             r = await c.get_object(**kwargs)
-            stream = r["Body"]
-            meta = {
-                "status": 206 if range_header else 200,
-                "content_length": r["ContentLength"],
-                "content_range": r.get("ContentRange"),
-                "content_type": r.get("ContentType", "application/octet-stream"),
-                "etag": r["ETag"].strip('"'),
-            }
+        except BaseException:
+            await cm.__aexit__(None, None, None)
+            raise
+        stream = r["Body"]
+        meta = {
+            "status": 206 if range_header else 200,
+            "content_length": r["ContentLength"],
+            "content_range": r.get("ContentRange"),
+            "content_type": r.get("ContentType", "application/octet-stream"),
+            "etag": r["ETag"].strip('"'),
+        }
 
-            async def _iter():
+        async def _iter():
+            try:
+                async for chunk in stream.iter_chunks(chunk_size=chunk_size):
+                    yield chunk
+            finally:
                 try:
-                    async for chunk in stream.iter_chunks(chunk_size=chunk_size):
-                        yield chunk
-                finally:
                     stream.close()
+                finally:
+                    await cm.__aexit__(None, None, None)
 
-            return _iter(), meta
+        return _iter(), meta
 
     async def get_range_bytes(self, key: str, start: int, end_inclusive: int) -> bytes:
         """Read a small explicit byte range and return as bytes (used by ZIP browsing)."""
