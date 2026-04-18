@@ -7,9 +7,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${COMPOSE_FILE:-$ROOT_DIR/docker-compose.yml}"
 
-# Explicitly disable docker compose's automatic .env loading: configuration
-# must come from the ambient environment only.
-COMPOSE=(docker compose --env-file /dev/null -f "$COMPOSE_FILE")
+# Env precedence for compose interpolation:
+# 1) STRICT_ENV_ONLY=1  -> ambient environment only (no file loading)
+# 2) COMPOSE_ENV_FILE   -> explicitly provided env file
+# 3) $ROOT_DIR/.env     -> default standalone project env file
+if [[ "${STRICT_ENV_ONLY:-0}" == "1" ]]; then
+  COMPOSE=(docker compose --env-file /dev/null -f "$COMPOSE_FILE")
+  echo "[deploy] Using ambient environment only (STRICT_ENV_ONLY=1)."
+elif [[ -n "${COMPOSE_ENV_FILE:-}" ]]; then
+  COMPOSE=(docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE")
+  echo "[deploy] Using env file: $COMPOSE_ENV_FILE"
+elif [[ -f "$ROOT_DIR/.env" ]]; then
+  COMPOSE=(docker compose --env-file "$ROOT_DIR/.env" -f "$COMPOSE_FILE")
+  echo "[deploy] Using env file: $ROOT_DIR/.env"
+else
+  COMPOSE=(docker compose -f "$COMPOSE_FILE")
+  echo "[deploy] No .env file found; relying on ambient environment variables."
+fi
 
 cd "$ROOT_DIR"
 
