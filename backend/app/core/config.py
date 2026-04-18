@@ -1,8 +1,8 @@
 """Application configuration loaded from environment."""
 from __future__ import annotations
 
+import json
 from typing import List
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,14 +46,19 @@ class Settings(BaseSettings):
     ZIP_PREVIEW_MAX_BYTES: int = 100 * 1024 * 1024
 
     # CORS / cookies
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:5173"]
+    ALLOWED_ORIGINS: str = "http://localhost:5173"
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
-    @classmethod
-    def _parse_origins(cls, v: object) -> object:
-        if isinstance(v, str) and not v.startswith("["):
-            return [s.strip() for s in v.split(",") if s.strip()]
-        return v
+    @property
+    def allowed_origins(self) -> List[str]:
+        value = self.ALLOWED_ORIGINS.strip()
+        if not value:
+            return []
+        if value.startswith("["):
+            parsed = json.loads(value)
+            if not isinstance(parsed, list):
+                raise ValueError("ALLOWED_ORIGINS JSON value must be an array")
+            return [str(s).strip() for s in parsed if str(s).strip()]
+        return [s.strip() for s in value.split(",") if s.strip()]
 
     # Misc
     LOG_LEVEL: str = "INFO"
