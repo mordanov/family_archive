@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   open: boolean
@@ -18,6 +19,7 @@ const sizes = {
 }
 
 export function Modal({ open, onClose, title, children, size = 'md' }: Props) {
+  const { t } = useTranslation()
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -35,7 +37,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: Props) {
         {title && (
           <div className="flex items-center justify-between border-b border-surface-strong px-4 py-3">
             <h3 className="text-base font-semibold text-ink">{title}</h3>
-            <button onClick={onClose} className="rounded p-1 hover:bg-surface-strong" aria-label="Close">
+            <button onClick={onClose} className="rounded p-1 hover:bg-surface-strong" aria-label={t('common.close')}>
               <X size={18} />
             </button>
           </div>

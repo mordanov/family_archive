@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import i18n from '@/i18n/config'
 import { App } from './App'
 import './index.css'
 
@@ -20,8 +21,8 @@ class RootErrorBoundary extends React.Component<{ children: React.ReactNode }, {
       return (
         <div className="flex min-h-dvh items-center justify-center p-6 text-center">
           <div>
-            <h1 className="text-lg font-semibold">Something went wrong</h1>
-            <p className="mt-2 text-sm text-ink-muted">Please reload the page.</p>
+            <h1 className="text-lg font-semibold">{i18n.t('errors.appCrashed')}</h1>
+            <p className="mt-2 text-sm text-ink-muted">{i18n.t('errors.reloadPage')}</p>
           </div>
         </div>
       )

@@ -1,0 +1,152 @@
+{
+  "common": {
+    "appName": "Семейный архив",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "back": "Назад",
+    "confirm": "Подтвердить",
+    "language": "Язык",
+    "close": "Закрыть",
+    "done": "Готово",
+    "never": "никогда"
+  },
+  "auth": {
+    "login": "Вход",
+    "logout": "Выход",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "signingIn": "Вход...",
+    "loginFailed": "Ошибка входа",
+    "signInToYourArchive": "Войдите в свой архив"
+  },
+  "navigation": {
+    "trash": "Корзина",
+    "home": "Главная",
+    "newFolder": "Новая папка",
+    "upload": "Загрузить",
+    "list": "Список",
+    "grid": "Сетка"
+  },
+  "folder": {
+    "thisFolder": "Эта папка",
+    "empty": "пуста.",
+    "dragFilesHere": "Перетащите файлы сюда или используйте кнопку загрузки.",
+    "createFolder": "Создать папку",
+    "folderName": "Название папки",
+    "rename": "Переименовать",
+    "renameTitle": "Переименовать {{kind}}",
+    "move": "Переместить",
+    "delete": "Удалить",
+    "deleteConfirm": "Удалить {{name}}?",
+    "renameTo": "Переименовать в",
+    "kindFolder": "папку",
+    "kindFile": "файл",
+    "typeLabel": "Папка"
+  },
+  "file": {
+    "file": "Файл",
+    "files": "Файлы",
+    "size": "Размер",
+    "created": "Создано",
+    "updated": "Обновлено",
+    "download": "Загрузить",
+    "share": "Поделиться",
+    "preview": "Просмотр"
+  },
+  "upload": {
+    "uploads": "Загрузки",
+    "uploading": "Загрузка",
+    "uploading_count": "Загрузки ({{count}})",
+    "status": "{{status}}",
+    "bytesUploaded": "{{uploaded}} / {{total}}",
+    "pause": "Пауза",
+    "resume": "Продолжить",
+    "repickFile": "выберите файл снова для продолжения",
+    "dropToUploadHere": "Перетащите для загрузки сюда",
+    "statuses": {
+      "queued": "в очереди",
+      "preparing": "подготовка",
+      "uploading": "загрузка",
+      "paused": "на паузе",
+      "completing": "завершение",
+      "done": "завершено",
+      "error": "ошибка"
+    }
+  },
+  "trash": {
+    "trash": "Корзина",
+    "retentionHint": "Элементы в корзине хранятся 30 дней, затем удаляются автоматически.",
+    "emptyTrash": "Очистить корзину",
+    "emptyTrashPurge": "Очистить корзину (удалить просроченное)",
+    "permanentlyDeleteFilesOlderThan30Days": "Окончательно удалить файлы старше 30 дней?",
+    "trashIsEmpty": "Корзина пуста",
+    "restore": "Восстановить",
+    "deletePermanently": "Удалить окончательно",
+    "restoreFolder": "Восстановить папку",
+    "restoreFile": "Восстановить файл",
+    "deletedAt": "удалено {{date}}",
+    "emptied": "Корзина очищена"
+  },
+  "share": {
+    "share": "Поделиться",
+    "shareTitle": "Поделиться {{kind}}: {{name}}",
+    "sharedMeta": "Общий {{target}} • истекает {{expires}}",
+    "createShare": "Создать ссылку для общего доступа",
+    "createLink": "Создать ссылку",
+    "shareLink": "Ссылка для общего доступа",
+    "password": "Пароль (опционально)",
+    "passwordRequired": "Требуется пароль",
+    "unlock": "Разблокировать",
+    "expiry": "Истекает (опционально)",
+    "expiresAt": "Срок действия (опционально)",
+    "maxDownloads": "Макс. загрузок (опционально)",
+    "copied": "Скопировано!",
+    "requiresPassword": "Требуется пароль",
+    "downloads": "Загрузки",
+    "publicLinkCreated": "Публичная ссылка создана:",
+    "copy": "Копировать"
+  },
+  "preview": {
+    "download": "Скачать",
+    "notAvailable": "Предпросмотр для этого типа файла недоступен.",
+    "notAvailableHint": "Используйте кнопку «Скачать» выше.",
+    "readingArchive": "Чтение архива...",
+    "selectEntry": "Выберите элемент для предпросмотра.",
+    "downloadEntry": "Скачать элемент"
+  },
+  "errors": {
+    "notFoundMessage": "Эта страница не существует.",
+    "goHome": "На главную",
+    "appCrashed": "Что-то пошло не так",
+    "reloadPage": "Пожалуйста, перезагрузите страницу."
+  },
+  "backend": {
+    "badRequest": "Некорректный запрос.",
+    "unauthorized": "Пожалуйста, войдите заново.",
+    "forbidden": "У вас нет доступа к этому действию.",
+    "notFound": "Запрошенный ресурс не найден.",
+    "conflict": "Операция конфликтует с текущим состоянием.",
+    "validation": "Некоторые поля заполнены неверно. Проверьте ввод.",
+    "tooManyRequests": "Слишком много запросов. Попробуйте чуть позже.",
+    "serverError": "Ошибка сервера. Попробуйте позже.",
+    "invalidCredentials": "Неверное имя пользователя или пароль.",
+    "folderNotFound": "Папка не найдена.",
+    "fileNotFound": "Файл не найден.",
+    "shareNotFound": "Ссылка не найдена или срок действия истек.",
+    "nameAlreadyTaken": "Папка с таким именем уже существует.",
+    "cannotMoveRoot": "Корневую папку нельзя перемещать.",
+    "cannotDeleteRoot": "Корневую папку нельзя удалять.",
+    "cannotMoveIntoItself": "Нельзя переместить папку в саму себя.",
+    "cannotMoveIntoDescendant": "Нельзя переместить папку в дочернюю.",
+    "csrfRequired": "Отсутствует токен безопасности. Обновите страницу и попробуйте снова.",
+    "csrfInvalid": "Недействительный токен безопасности. Обновите страницу и попробуйте снова."
+  },
+  "system": {
+    "genericError": "Непредвиденная ошибка. Попробуйте снова."
+  }
+}
+

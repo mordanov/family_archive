@@ -1,5 +1,7 @@
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useFolderDetail } from '@/hooks/useFolderTree'
+import { mapErrorToI18n } from '@/i18n/errors'
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs'
 import { FileList } from '@/components/browser/FileList'
 import { DropZone, UploadButton } from '@/components/upload/DropZone'
@@ -9,6 +11,7 @@ import { PreviewModal } from '@/components/preview/PreviewModal'
 import { FolderPlus } from 'lucide-react'
 
 export function BrowserPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const folderId = Number(id ?? 1)
   const detail = useFolderDetail(folderId)
@@ -16,11 +19,11 @@ export function BrowserPage() {
   const setNewOpen = useUI((s) => s.setNewFolderOpen)
 
   if (detail.isLoading) {
-    return <div className="p-6 text-ink-muted">Loading folder...</div>
+    return <div className="p-6 text-ink-muted">{t('common.loading')}</div>
   }
 
   if (detail.isError) {
-    return <div className="p-6 text-red-600">{(detail.error as Error).message}</div>
+    return <div className="p-6 text-red-600">{mapErrorToI18n(t, detail.error)}</div>
   }
 
   const data = detail.data
@@ -35,7 +38,7 @@ export function BrowserPage() {
               onClick={() => setNewOpen(true)}
               className="flex items-center gap-1 rounded border border-surface-strong bg-surface px-3 py-1.5 text-sm hover:bg-surface-muted"
             >
-              <FolderPlus size={16} /> New folder
+              <FolderPlus size={16} /> {t('navigation.newFolder')}
             </button>
             <UploadButton folderId={folderId} />
           </div>

@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Modal } from './Modal'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { mapErrorToI18n } from '@/i18n/errors'
 import { useUI } from '@/stores/uiStore'
 import { foldersApi } from '@/api/folders'
 import { filesApi } from '@/api/files'
 import toast from 'react-hot-toast'
 
 export function RenameDialog() {
+  const { t } = useTranslation()
   const target = useUI((s) => s.renameTarget)
   const setTarget = useUI((s) => s.setRenameTarget)
   const [name, setName] = useState(target?.item.name ?? '')
@@ -25,12 +28,16 @@ export function RenameDialog() {
       qc.invalidateQueries({ queryKey: ['folder-children', folderId] })
       setTarget(null)
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(mapErrorToI18n(t, e)),
   })
 
   if (!target) return null
   return (
-    <Modal open onClose={() => setTarget(null)} title={`Rename ${target.kind}`}>
+    <Modal
+      open
+      onClose={() => setTarget(null)}
+      title={t('folder.renameTitle', { kind: target.kind === 'folder' ? t('folder.kindFolder') : t('folder.kindFile') })}
+    >
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -46,10 +53,10 @@ export function RenameDialog() {
         />
         <div className="flex justify-end gap-2">
           <button type="button" onClick={() => setTarget(null)} className="rounded px-3 py-1.5 text-ink-muted hover:bg-surface-muted">
-            Cancel
+            {t('common.cancel')}
           </button>
           <button type="submit" disabled={m.isPending} className="rounded bg-accent px-3 py-1.5 text-white hover:bg-accent-hover">
-            Rename
+            {t('folder.rename')}
           </button>
         </div>
       </form>

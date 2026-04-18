@@ -1,8 +1,10 @@
 import { Folder as FolderIcon, Home } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { useFolderChildren } from '@/hooks/useFolderTree'
+import { useTranslation } from 'react-i18next'
 
 function FolderNode({ id, name, depth, trail }: { id: number; name: string; depth: number; trail: Set<number> }) {
+  const { t } = useTranslation()
   if (trail.has(id) || depth > 32) return null
   const { data } = useFolderChildren(id)
   const nextTrail = new Set(trail)
@@ -15,7 +17,7 @@ function FolderNode({ id, name, depth, trail }: { id: number; name: string; dept
         style={{ paddingLeft: 8 + depth * 14 }}
       >
         {depth === 0 ? <Home size={14} /> : <FolderIcon size={14} />}
-        <span className="truncate">{name || 'Home'}</span>
+        <span className="truncate">{name || t('navigation.home')}</span>
       </Link>
       {data?.folders.map((f) => (
         <FolderNode key={f.id} id={f.id} name={f.name} depth={depth + 1} trail={nextTrail} />
@@ -25,11 +27,12 @@ function FolderNode({ id, name, depth, trail }: { id: number; name: string; dept
 }
 
 export function Sidebar() {
+  const { t } = useTranslation()
   const { id } = useParams()
   return (
     <aside className="hidden w-64 shrink-0 border-r border-surface-strong bg-surface md:block">
       <nav className="p-2">
-        <FolderNode id={1} name="Home" depth={0} trail={new Set()} />
+        <FolderNode id={1} name={t('navigation.home')} depth={0} trail={new Set()} />
       </nav>
     </aside>
   )

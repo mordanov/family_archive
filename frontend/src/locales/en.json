@@ -1,0 +1,152 @@
+{
+  "common": {
+    "appName": "Family Archive",
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "confirm": "Confirm",
+    "language": "Language",
+    "close": "Close",
+    "done": "Done",
+    "never": "never"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Log out",
+    "username": "Username",
+    "password": "Password",
+    "signingIn": "Signing in…",
+    "loginFailed": "Login failed",
+    "signInToYourArchive": "Sign in to your archive"
+  },
+  "navigation": {
+    "trash": "Trash",
+    "home": "Home",
+    "newFolder": "New folder",
+    "upload": "Upload",
+    "list": "List",
+    "grid": "Grid"
+  },
+  "folder": {
+    "thisFolder": "This folder",
+    "empty": "is empty.",
+    "dragFilesHere": "Drag files here or use the Upload button.",
+    "createFolder": "Create Folder",
+    "folderName": "Folder name",
+    "rename": "Rename",
+    "renameTitle": "Rename {{kind}}",
+    "move": "Move",
+    "delete": "Delete",
+    "deleteConfirm": "Delete {{name}}?",
+    "renameTo": "Rename to",
+    "kindFolder": "folder",
+    "kindFile": "file",
+    "typeLabel": "Folder"
+  },
+  "file": {
+    "file": "File",
+    "files": "Files",
+    "size": "Size",
+    "created": "Created",
+    "updated": "Updated",
+    "download": "Download",
+    "share": "Share",
+    "preview": "Preview"
+  },
+  "upload": {
+    "uploads": "Uploads",
+    "uploading": "Uploading",
+    "uploading_count": "Uploads ({{count}})",
+    "status": "{{status}}",
+    "bytesUploaded": "{{uploaded}} / {{total}}",
+    "pause": "Pause",
+    "resume": "Resume",
+    "repickFile": "re-pick file to resume",
+    "dropToUploadHere": "Drop to upload here",
+    "statuses": {
+      "queued": "queued",
+      "preparing": "preparing",
+      "uploading": "uploading",
+      "paused": "paused",
+      "completing": "completing",
+      "done": "done",
+      "error": "error"
+    }
+  },
+  "trash": {
+    "trash": "Trash",
+    "retentionHint": "Items in trash are kept for 30 days and then automatically removed.",
+    "emptyTrash": "Empty trash",
+    "emptyTrashPurge": "Empty trash (purge expired)",
+    "permanentlyDeleteFilesOlderThan30Days": "Permanently delete files older than 30 days?",
+    "trashIsEmpty": "Trash is empty",
+    "restore": "Restore",
+    "deletePermanently": "Delete permanently",
+    "restoreFolder": "Restore folder",
+    "restoreFile": "Restore file",
+    "deletedAt": "deleted {{date}}",
+    "emptied": "Trash emptied"
+  },
+  "share": {
+    "share": "Share",
+    "shareTitle": "Share {{kind}}: {{name}}",
+    "sharedMeta": "Shared {{target}} • expires {{expires}}",
+    "createShare": "Create share link",
+    "createLink": "Create link",
+    "shareLink": "Share link",
+    "password": "Password (optional)",
+    "passwordRequired": "Password required",
+    "unlock": "Unlock",
+    "expiry": "Expires (optional)",
+    "expiresAt": "Expires at (optional)",
+    "maxDownloads": "Max downloads (optional)",
+    "copied": "Copied!",
+    "requiresPassword": "Requires password",
+    "downloads": "Downloads",
+    "publicLinkCreated": "Public link created:",
+    "copy": "Copy"
+  },
+  "preview": {
+    "download": "Download",
+    "notAvailable": "Preview not available for this file type.",
+    "notAvailableHint": "Use the Download button above.",
+    "readingArchive": "Reading archive...",
+    "selectEntry": "Select an entry to preview.",
+    "downloadEntry": "Download entry"
+  },
+  "errors": {
+    "notFoundMessage": "This page does not exist.",
+    "goHome": "Go home",
+    "appCrashed": "Something went wrong",
+    "reloadPage": "Please reload the page."
+  },
+  "backend": {
+    "badRequest": "Request is invalid.",
+    "unauthorized": "Please sign in again.",
+    "forbidden": "You do not have access to this action.",
+    "notFound": "Requested resource was not found.",
+    "conflict": "Operation conflicts with current state.",
+    "validation": "Some fields are invalid. Please check your input.",
+    "tooManyRequests": "Too many requests. Please try again in a moment.",
+    "serverError": "Server error. Please try again later.",
+    "invalidCredentials": "Invalid username or password.",
+    "folderNotFound": "Folder was not found.",
+    "fileNotFound": "File was not found.",
+    "shareNotFound": "Share link was not found or expired.",
+    "nameAlreadyTaken": "A folder with this name already exists here.",
+    "cannotMoveRoot": "Root folder cannot be moved.",
+    "cannotDeleteRoot": "Root folder cannot be deleted.",
+    "cannotMoveIntoItself": "Folder cannot be moved into itself.",
+    "cannotMoveIntoDescendant": "Folder cannot be moved into a descendant.",
+    "csrfRequired": "Security token is missing. Refresh the page and try again.",
+    "csrfInvalid": "Security token is invalid. Refresh the page and try again."
+  },
+  "system": {
+    "genericError": "Unexpected error. Please try again."
+  }
+}
+

@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
+import { mapErrorToI18n } from '@/i18n/errors'
 import toast from 'react-hot-toast'
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const me = useQuery({ queryKey: ['me'], queryFn: authApi.me, retry: false, refetchOnWindowFocus: false })
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -12,7 +16,7 @@ export function LoginPage() {
   const m = useMutation({
     mutationFn: () => authApi.login(username, password),
     onSuccess: () => nav('/', { replace: true }),
-    onError: (e: Error) => toast.error(e.message || 'Login failed'),
+    onError: (e: unknown) => toast.error(mapErrorToI18n(t, e, 'auth.loginFailed')),
   })
 
   if (me.data) return <Navigate to="/" replace />
@@ -23,10 +27,15 @@ export function LoginPage() {
         onSubmit={(e) => { e.preventDefault(); m.mutate() }}
         className="w-full max-w-sm rounded-lg border border-surface-strong bg-surface p-6 shadow-sm"
       >
-        <h1 className="mb-1 text-xl font-semibold">Family Archive</h1>
-        <p className="mb-6 text-sm text-ink-muted">Sign in to your archive.</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="mb-1 text-xl font-semibold">📁 {t('common.appName')}</h1>
+            <p className="text-sm text-ink-muted">{t('auth.signInToYourArchive')}</p>
+          </div>
+          <LanguageSwitcher />
+        </div>
         <label className="mb-3 block">
-          <span className="text-sm text-ink-muted">Username</span>
+          <span className="text-sm text-ink-muted">{t('auth.username')}</span>
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -36,7 +45,7 @@ export function LoginPage() {
           />
         </label>
         <label className="mb-5 block">
-          <span className="text-sm text-ink-muted">Password</span>
+          <span className="text-sm text-ink-muted">{t('auth.password')}</span>
           <input
             type="password"
             value={password}
@@ -50,7 +59,7 @@ export function LoginPage() {
           disabled={m.isPending}
           className="w-full rounded bg-accent px-3 py-2 text-white hover:bg-accent-hover disabled:opacity-60"
         >
-          {m.isPending ? 'Signing in…' : 'Sign in'}
+          {m.isPending ? t('auth.signingIn') : t('auth.login')}
         </button>
       </form>
     </div>

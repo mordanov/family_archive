@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { AppShell } from '@/components/layout/AppShell'
 import { LoginPage } from '@/routes/LoginPage'
@@ -11,8 +12,9 @@ import { NotFoundPage } from '@/routes/NotFoundPage'
 import { hydrateUploadsFromIDB } from '@/stores/uploadStore'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation()
   const me = useQuery({ queryKey: ['me'], queryFn: authApi.me, retry: false, refetchOnWindowFocus: false })
-  if (me.isLoading) return <div className="p-8 text-center text-ink-muted">Loading…</div>
+  if (me.isLoading) return <div className="p-8 text-center text-ink-muted">{t('common.loading')}</div>
   if (me.isError) return <Navigate to="/login" replace />
   return <>{children}</>
 }

@@ -6,10 +6,15 @@ const BASE = '/api/v1'
 export class HttpError extends Error {
   status: number
   body: ApiError | string
+  code?: string
+  rawMessage: string
   constructor(status: number, body: ApiError | string) {
-    super(typeof body === 'string' ? body : body.message)
+    const message = typeof body === 'string' ? body : body.message
+    super(message)
     this.status = status
     this.body = body
+    this.code = typeof body === 'string' ? undefined : body.code
+    this.rawMessage = message
   }
 }
 

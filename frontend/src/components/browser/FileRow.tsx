@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Folder as FolderIcon, FileIcon, Image as ImgIcon, Video, Music, FileArchive, MoreVertical, Pencil, Share2, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Folder as FolderIcon, FileIcon, Image as ImgIcon, Video, Music, FileArchive, Pencil, Share2, Trash2 } from 'lucide-react'
 import type { FileItem, Folder } from '@/types/api'
 import { formatBytes, formatDate } from '@/lib/formatters'
 import { classifyMime } from '@/lib/mime'
+import { mapErrorToI18n } from '@/i18n/errors'
 import { filesApi } from '@/api/files'
 import { foldersApi } from '@/api/folders'
 import { useUI } from '@/stores/uiStore'
@@ -24,9 +26,11 @@ interface RowProps {
   kind: 'folder' | 'file'
   item: Folder | FileItem
   parentId: number
+  viewMode: 'list' | 'grid'
 }
 
-export function Row({ kind, item, parentId }: RowProps) {
+export function Row({ kind, item, parentId, viewMode }: RowProps) {
+  const { t } = useTranslation()
   const nav = useNavigate()
   const qc = useQueryClient()
   const setRename = useUI((s) => s.setRenameTarget)
@@ -41,7 +45,7 @@ export function Row({ kind, item, parentId }: RowProps) {
   const removeMut = useMutation({
     mutationFn: () => (isFolder ? foldersApi.remove(item.id) : filesApi.remove(item.id)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['folder-children', parentId] }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(mapErrorToI18n(t, e)),
   })
 
   const onDoubleClick = () => {
@@ -53,15 +57,21 @@ export function Row({ kind, item, parentId }: RowProps) {
   const showThumb = file && file.has_thumbnail
   const isImage = file && classifyMime(file.content_type, file.name) === 'image'
 
+  const isGrid = viewMode === 'grid'
+
   return (
     <div
       tabIndex={0}
       onClick={() => (isFolder ? sel.toggleFolder(item.id) : sel.toggleFile(item.id))}
       onDoubleClick={onDoubleClick}
-      className={`group flex items-center gap-3 border-b border-surface-strong px-3 py-2 outline-none hover:bg-surface ${isSelected ? 'bg-accent/10' : ''}`}
+      className={`group outline-none hover:bg-surface ${isSelected ? 'bg-accent/10' : ''} ${
+        isGrid
+          ? 'rounded-md border border-surface-strong bg-surface p-3'
+          : 'flex items-center gap-3 border-b border-surface-strong px-3 py-2'
+      }`}
     >
       {/* Icon / thumb */}
-      <div className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-muted">
+      <div className={`overflow-hidden rounded bg-surface-muted ${isGrid ? 'mb-2 h-28 w-full' : 'h-9 w-9 shrink-0'}`}>
         {showThumb && isImage ? (
           <img src={filesApi.thumbnailUrl(file!.id, 256)} alt="" className="h-full w-full object-cover" />
         ) : isFolder ? (
@@ -72,32 +82,32 @@ export function Row({ kind, item, parentId }: RowProps) {
       </div>
 
       {/* Name */}
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm text-ink">{item.name || 'Home'}</div>
+      <div className={`min-w-0 ${isGrid ? '' : 'flex-1'}`}>
+        <div className="truncate text-sm text-ink">{item.name || t('navigation.home')}</div>
         <div className="truncate text-xs text-ink-muted">
-          {isFolder ? 'Folder' : `${formatBytes((item as FileItem).size_bytes)} • ${(item as FileItem).content_type}`}
+          {isFolder ? t('folder.typeLabel') : `${formatBytes((item as FileItem).size_bytes)} • ${(item as FileItem).content_type}`}
         </div>
       </div>
 
       {/* Date */}
-      <div className="hidden w-32 shrink-0 text-xs text-ink-muted sm:block">{formatDate(item.updated_at)}</div>
+      <div className={`${isGrid ? 'mt-1 text-xs text-ink-muted' : 'hidden w-32 shrink-0 text-xs text-ink-muted sm:block'}`}>{formatDate(item.updated_at)}</div>
 
       {/* Actions */}
-      <div className="ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+      <div className={`${isGrid ? 'mt-2 flex items-center gap-1 opacity-100' : 'ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100'}`}>
         <button
           className="rounded p-1.5 text-ink-muted hover:bg-surface-strong"
-          title="Rename"
+          title={t('folder.rename')}
           onClick={(e) => { e.stopPropagation(); setRename({ kind, item }) }}
         ><Pencil size={15} /></button>
         <button
           className="rounded p-1.5 text-ink-muted hover:bg-surface-strong"
-          title="Share"
+          title={t('share.share')}
           onClick={(e) => { e.stopPropagation(); setShare({ kind, id: item.id, name: item.name }) }}
         ><Share2 size={15} /></button>
         <button
           className="rounded p-1.5 text-red-600 hover:bg-red-50"
-          title="Delete"
-          onClick={(e) => { e.stopPropagation(); if (confirm(`Delete ${item.name}?`)) removeMut.mutate() }}
+          title={t('common.delete')}
+          onClick={(e) => { e.stopPropagation(); if (confirm(t('folder.deleteConfirm', { name: item.name }))) removeMut.mutate() }}
         ><Trash2 size={15} /></button>
       </div>
     </div>

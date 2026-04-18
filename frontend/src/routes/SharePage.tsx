@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { sharesApi } from '@/api/shares'
 import { formatBytes } from '@/lib/formatters'
+import { mapErrorToI18n } from '@/i18n/errors'
 import { Download, Lock } from 'lucide-react'
 
 export function SharePage() {
+  const { t } = useTranslation()
   const { token = '' } = useParams()
   const [password, setPassword] = useState('')
   const [unlocked, setUnlocked] = useState(false)
@@ -18,14 +21,15 @@ export function SharePage() {
       await sharesApi.unlock(token, password)
       setUnlocked(true)
     } catch (e) {
-      setError((e as Error).message)
+      setError(mapErrorToI18n(t, e))
     }
   }
 
-  if (meta.isLoading) return <div className="p-8 text-center text-ink-muted">Loading…</div>
-  if (meta.isError) return <div className="p-8 text-center text-red-600">{(meta.error as Error).message}</div>
+  if (meta.isLoading) return <div className="p-8 text-center text-ink-muted">{t('common.loading')}</div>
+  if (meta.isError) return <div className="p-8 text-center text-red-600">{mapErrorToI18n(t, meta.error)}</div>
   if (!meta.data) return null
   const m = meta.data
+  const kindLabel = m.target_type === 'folder' ? t('folder.kindFolder') : t('folder.kindFile')
   const needPassword = m.requires_password && !unlocked
 
   return (
@@ -33,13 +37,16 @@ export function SharePage() {
       <header className="mb-4">
         <h1 className="text-xl font-semibold">{m.name}</h1>
         <p className="text-xs text-ink-muted">
-          Shared {m.target_type} • expires {m.expires_at ? new Date(m.expires_at).toLocaleString() : 'never'}
+          {t('share.sharedMeta', {
+            target: kindLabel,
+            expires: m.expires_at ? new Date(m.expires_at).toLocaleString() : t('common.never'),
+          })}
         </p>
       </header>
 
       {needPassword && (
         <div className="mb-4 rounded border border-surface-strong bg-surface p-4">
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Lock size={16} /> Password required</div>
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Lock size={16} /> {t('share.passwordRequired')}</div>
           <div className="flex gap-2">
             <input
               type="password"
@@ -48,7 +55,7 @@ export function SharePage() {
               className="flex-1 rounded border border-surface-strong px-3 py-2"
             />
             <button onClick={tryUnlock} className="rounded bg-accent px-3 py-2 text-white hover:bg-accent-hover">
-              Unlock
+              {t('share.unlock')}
             </button>
           </div>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
@@ -65,7 +72,7 @@ export function SharePage() {
             href={sharesApi.publicDownloadUrl(token)}
             className="inline-flex items-center gap-1 rounded bg-accent px-3 py-2 text-white hover:bg-accent-hover"
           >
-            <Download size={16} /> Download
+            <Download size={16} /> {t('preview.download')}
           </a>
         </div>
       )}
