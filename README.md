@@ -54,19 +54,8 @@ cd backend && pip install -r requirements-dev.txt && pytest
 cd frontend && npm install && npm test
 ```
 
-## Phase 5 status
-Documentation complete. See [`docs/`](./docs/README.md):
+## Documentation 
+See [`docs/`](./docs/README.md):
 - [Business overview](./docs/01-business-overview.md) — what & why for non-engineers.
 - [Technical architecture](./docs/02-technical-architecture.md) — diagrams, data flows, schema, decisions.
 - [Infra improvements](./docs/03-infra-improvements.md) — prioritised scalability / fault-tolerance / HA roadmap.
-
-## Phases
-- [x] Phase 0: clarification
-- [x] Phase 1: architecture
-- [x] Phase 2: backend
-- [x] Phase 3: frontend
-- [x] Phase 4: infrastructure & deployment
-- [x] Phase 5: documentation
-
-
-
