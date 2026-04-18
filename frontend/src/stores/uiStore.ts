@@ -18,10 +18,27 @@ interface UIState {
   setShareTarget: (t: UIState['shareTarget']) => void
 }
 
+function readInitialViewMode(): ViewMode {
+  try {
+    const raw = localStorage.getItem('archive.viewMode')
+    return raw === 'grid' || raw === 'list' ? raw : 'list'
+  } catch {
+    return 'list'
+  }
+}
+
+function persistViewMode(mode: ViewMode): void {
+  try {
+    localStorage.setItem('archive.viewMode', mode)
+  } catch {
+    // Non-fatal: continue with in-memory state if storage is unavailable.
+  }
+}
+
 export const useUI = create<UIState>((set) => ({
-  viewMode: (localStorage.getItem('archive.viewMode') as ViewMode) || 'list',
+  viewMode: readInitialViewMode(),
   setViewMode: (m) => {
-    localStorage.setItem('archive.viewMode', m)
+    persistViewMode(m)
     set({ viewMode: m })
   },
   previewFileId: null,
