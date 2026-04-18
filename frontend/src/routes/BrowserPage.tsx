@@ -11,9 +11,19 @@ import { FolderPlus } from 'lucide-react'
 export function BrowserPage() {
   const { id } = useParams()
   const folderId = Number(id ?? 1)
-  const { data } = useFolderDetail(folderId)
+  const detail = useFolderDetail(folderId)
   const newOpen = useUI((s) => s.newFolderOpen)
   const setNewOpen = useUI((s) => s.setNewFolderOpen)
+
+  if (detail.isLoading) {
+    return <div className="p-6 text-ink-muted">Loading folder...</div>
+  }
+
+  if (detail.isError) {
+    return <div className="p-6 text-red-600">{(detail.error as Error).message}</div>
+  }
+
+  const data = detail.data
 
   return (
     <DropZone folderId={folderId}>
