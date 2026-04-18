@@ -7,7 +7,7 @@ export function formatBytes(n: number): string {
     v /= 1024
     i++
   }
-  return `${v.toFixed(v >= 100 || i === 0 ? 0 : 1)} ${units[i]}`
+  return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`
 }
 
 export function formatDate(iso: string): string {

@@ -66,7 +66,7 @@ async def create(
     )
     db.add(f)
     await db.flush()
-    await db.refresh(f, attribute_names=["uuid", "created_at", "updated_at"])
+    await db.refresh(f, attribute_names=["uuid", "created_at", "updated_at", "tags"])
     return f
 
 

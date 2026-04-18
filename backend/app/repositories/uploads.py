@@ -24,7 +24,7 @@ async def create(db: AsyncSession, **fields) -> Upload:
     up = Upload(**fields)
     db.add(up)
     await db.flush()
-    await db.refresh(up, attribute_names=["created_at"])
+    await db.refresh(up, attribute_names=["created_at", "parts"])
     return up
 
 

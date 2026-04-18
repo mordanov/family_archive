@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import asyncio
+import socket
 import uuid as uuid_lib
 
 import pytest
@@ -10,8 +11,18 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from testcontainers.postgres import PostgresContainer
 
+
+def _free_port() -> int:
+    """Pick a free TCP port (avoids clashes with macOS AirPlay on :5000, etc.)."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+_MOTO_PORT = int(os.environ.get("MOTO_S3_PORT") or _free_port())
+
 # Configure environment BEFORE importing app
-os.environ.setdefault("S3_ENDPOINT_URL", "http://localhost:5000")
+os.environ.setdefault("S3_ENDPOINT_URL", f"http://localhost:{_MOTO_PORT}")
 os.environ.setdefault("S3_ACCESS_KEY", "test")
 os.environ.setdefault("S3_SECRET_KEY", "test")
 os.environ.setdefault("S3_BUCKET", "family-archive-test")
@@ -25,13 +36,6 @@ os.environ.setdefault("MAX_LOGIN_ATTEMPTS_PER_15MIN", "1000")
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="session")
 def postgres_container():
     with PostgresContainer("postgres:16-alpine") as pg:
         yield pg
@@ -39,6 +43,21 @@ def postgres_container():
 
 @pytest_asyncio.fixture(scope="session")
 async def setup_db(postgres_container):
+    # Wait until the published Postgres port is actually accepting TCP
+    # connections. testcontainers' wait_for_logs may return slightly before
+    # port forwarding is ready (notably under Colima/Lima on macOS).
+    host = postgres_container.get_container_host_ip()
+    port = int(postgres_container.get_exposed_port(5432))
+    deadline = asyncio.get_event_loop().time() + 30
+    while True:
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                break
+        except OSError:
+            if asyncio.get_event_loop().time() > deadline:
+                raise
+            await asyncio.sleep(0.5)
+
     url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg").replace("postgresql+psycopg2", "postgresql+asyncpg")
     if "+asyncpg" not in url:
         url = url.replace("postgresql://", "postgresql+asyncpg://")
@@ -68,7 +87,7 @@ async def s3_mock():
     import app.storage.s3_client as s3_mod
     s3_mod._session = None  # discard stale connections from previous test's server
     from moto.server import ThreadedMotoServer
-    server = ThreadedMotoServer(port=5000, verbose=False)
+    server = ThreadedMotoServer(port=_MOTO_PORT, verbose=False)
     server.start()
     try:
         from app.storage.object_store import object_store

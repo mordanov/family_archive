@@ -34,14 +34,17 @@
                  │        │   - multipart GC  (every 1 h)
                  ▼        ▼
    ┌─────────────────────────────┐    ┌────────────────────────────────┐
-   │  PostgreSQL 16 (shared)     │    │  Hetzner Object Storage (S3)   │
-   │  database `archive`         │    │  bucket: family-archive        │
-   │  - users, sessions          │    │  ├ uploads/   (in flight)      │
-   │  - folders, files, tags     │    │  ├ files/<uuid>/<safe-name>    │
-   │  - uploads, upload_parts    │    │  ├ thumbnails/<uuid>/{256,1024}│
-   │  - share_links              │    │  ├ posters/<uuid>.jpg          │
-   │  - audit_log                │    │  └ deleted/<id>/...            │
-   └─────────────────────────────┘    └────────────────────────────────┘
+    │  PostgreSQL 16 (shared)     │    │  Hetzner Object Storage (S3)   │
+    │  database `archive`         │    │  bucket: family-archive        │
+    │  - users, sessions          │    │  ├ uploads/   (in flight)      │
+    │  - folders, files, tags     │    │  ├ files/<uuid>/<safe-name>    │
+    │  - uploads, upload_parts    │    │  ├ thumbnails/<uuid>/{256,1024}│
+    │  - share_links              │    │  ├ posters/<uuid>.jpg          │
+    │  - audit_log                │    │  ├ deleted/<id>/...            │
+    │                             │    │  └ admin-routine/backups/*.zip │
+    │                             │    │     (reserved for              │
+    │                             │    │      family-admin-routine)     │
+    └─────────────────────────────┘    └────────────────────────────────┘
 ```
 
 ## 2. Component breakdown
@@ -360,6 +363,29 @@ fan-out.
 - **CDN**: thumbnails and posters carry `Cache-Control: public, max-age=
   604800, immutable` and have URLs that include a UUID, so CDN caching is
   safe today.
+
+### 7.x Shared-bucket convention with `family-admin-routine`
+
+The `family-archive` bucket is intentionally shareable with sibling apps in
+the monorepo. As of April 2026 it is also used by **`family-admin-routine`**
+to store its database/volume backup ZIPs.
+
+Convention:
+
+| App | Owns prefixes |
+|---|---|
+| `family-archive` | `uploads/`, `files/`, `thumbnails/`, `posters/`, `deleted/` |
+| `family-admin-routine` | `admin-routine/backups/<site>_<YYYYMMDD_HHMMSS>.zip` |
+
+This is safe because **the archive backend never enumerates the bucket** — it
+only ever reads/writes/deletes keys that it has previously stored in its own
+`files`, `thumbnails`, `posters` or `uploads` tables (`s3_key` columns) and
+expanded prefixes under `deleted/<id>/`. Objects written by other apps under
+unrelated prefixes are therefore invisible to it.
+
+If you ever want hard isolation, override `ADMIN_ROUTINE_BACKUP_S3_BUCKET` in
+the web-folders `.env` to point admin-routine at a separate bucket — no code
+changes needed in either app.
 
 This document, together with the source code itself and `01-business-overview.md`
 and `03-infra-improvements.md`, fully describes Family Archive v1.
