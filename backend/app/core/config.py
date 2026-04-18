@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import List
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,6 +47,13 @@ class Settings(BaseSettings):
 
     # CORS / cookies
     ALLOWED_ORIGINS: List[str] = ["http://localhost:5173"]
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def _parse_origins(cls, v: object) -> object:
+        if isinstance(v, str) and not v.startswith("["):
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return v
 
     # Misc
     LOG_LEVEL: str = "INFO"
