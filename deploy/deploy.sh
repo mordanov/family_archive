@@ -7,25 +7,35 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${COMPOSE_FILE:-$ROOT_DIR/docker-compose.yml}"
 
-# Env precedence for compose interpolation:
-# 1) STRICT_ENV_ONLY=1  -> ambient environment only (no file loading)
-# 2) COMPOSE_ENV_FILE   -> explicitly provided env file
-# 3) $ROOT_DIR/.env     -> default standalone project env file
-if [[ "${STRICT_ENV_ONLY:-0}" == "1" ]]; then
-  COMPOSE=(docker compose --env-file /dev/null -f "$COMPOSE_FILE")
-  echo "[deploy] Using ambient environment only (STRICT_ENV_ONLY=1)."
-elif [[ -n "${COMPOSE_ENV_FILE:-}" ]]; then
-  COMPOSE=(docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE")
-  echo "[deploy] Using env file: $COMPOSE_ENV_FILE"
-elif [[ -f "$ROOT_DIR/.env" ]]; then
-  COMPOSE=(docker compose --env-file "$ROOT_DIR/.env" -f "$COMPOSE_FILE")
-  echo "[deploy] Using env file: $ROOT_DIR/.env"
-else
-  COMPOSE=(docker compose -f "$COMPOSE_FILE")
-  echo "[deploy] No .env file found; relying on ambient environment variables."
-fi
+# Explicitly disable docker compose's automatic .env loading: configuration
+# must come from the ambient environment only.
+COMPOSE=(docker compose --env-file /dev/null -f "$COMPOSE_FILE")
 
 cd "$ROOT_DIR"
+
+# Fail fast: check that all required ARCHIVE_* variables are set before
+# handing off to docker compose, so the error message is actionable.
+REQUIRED_VARS=(
+  ARCHIVE_POSTGRES_PASSWORD
+  ARCHIVE_SECRET_KEY
+  ARCHIVE_USER1_PASSWORD
+  ARCHIVE_USER2_PASSWORD
+  ARCHIVE_S3_ENDPOINT_URL
+  ARCHIVE_S3_BUCKET
+  ARCHIVE_S3_ACCESS_KEY
+  ARCHIVE_S3_SECRET_KEY
+)
+MISSING=()
+for var in "${REQUIRED_VARS[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    MISSING+=("$var")
+  fi
+done
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "[deploy] ERROR: Required environment variables are not set:" >&2
+  printf '[deploy]   %s\n' "${MISSING[@]}" >&2
+  exit 1
+fi
 
 echo "[deploy] Validating compose config..."
 "${COMPOSE[@]}" config > /dev/null
