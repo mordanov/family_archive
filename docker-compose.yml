@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${ARCHIVE_DATABASE_URL:?required}
+      DATABASE_URL: postgresql+asyncpg://${ARCHIVE_POSTGRES_USER:-archive_user}:${ARCHIVE_POSTGRES_PASSWORD:?required}@${ARCHIVE_DB_HOST:-recipes-db}:5432/${ARCHIVE_POSTGRES_DB:-archive}
       SECRET_KEY: ${ARCHIVE_SECRET_KEY:?required}
       COOKIE_SECURE: "1"
       COOKIE_DOMAIN: ${ARCHIVE_COOKIE_DOMAIN:-}

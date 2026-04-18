@@ -16,7 +16,7 @@ cd "$ROOT_DIR"
 # Fail fast: check that all required ARCHIVE_* variables are set before
 # handing off to docker compose, so the error message is actionable.
 REQUIRED_VARS=(
-  ARCHIVE_DATABASE_URL
+  ARCHIVE_POSTGRES_PASSWORD
   ARCHIVE_SECRET_KEY
   ARCHIVE_USER1_PASSWORD
   ARCHIVE_USER2_PASSWORD
