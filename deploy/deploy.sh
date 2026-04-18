@@ -16,7 +16,7 @@ cd "$ROOT_DIR"
 # Fail fast: check that all required ARCHIVE_* variables are set before
 # handing off to docker compose, so the error message is actionable.
 REQUIRED_VARS=(
-  ARCHIVE_POSTGRES_PASSWORD
+  ARCHIVE_DATABASE_URL
   ARCHIVE_SECRET_KEY
   ARCHIVE_USER1_PASSWORD
   ARCHIVE_USER2_PASSWORD
@@ -42,17 +42,6 @@ echo "[deploy] Validating compose config..."
 
 echo "[deploy] Building images..."
 "${COMPOSE[@]}" build archive-backend archive-frontend
-
-echo "[deploy] Starting database..."
-"${COMPOSE[@]}" up -d archive-db
-
-echo "[deploy] Waiting for database..."
-for i in {1..30}; do
-  if "${COMPOSE[@]}" exec -T archive-db pg_isready -U "${ARCHIVE_POSTGRES_USER:-archive_user}" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 2
-done
 
 echo "[deploy] Starting application..."
 "${COMPOSE[@]}" up -d --remove-orphans

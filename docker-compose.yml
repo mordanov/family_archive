@@ -1,26 +1,11 @@
 services:
-  archive-db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${ARCHIVE_POSTGRES_DB:-archive}
-      POSTGRES_USER: ${ARCHIVE_POSTGRES_USER:-archive_user}
-      POSTGRES_PASSWORD: ${ARCHIVE_POSTGRES_PASSWORD:?required}
-    volumes:
-      - archive_pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${ARCHIVE_POSTGRES_USER:-archive_user} -d ${ARCHIVE_POSTGRES_DB:-archive}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   archive-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://${ARCHIVE_POSTGRES_USER:-archive_user}:${ARCHIVE_POSTGRES_PASSWORD}@archive-db:5432/${ARCHIVE_POSTGRES_DB:-archive}
+      DATABASE_URL: ${ARCHIVE_DATABASE_URL:?required}
       SECRET_KEY: ${ARCHIVE_SECRET_KEY:?required}
       COOKIE_SECURE: "1"
       COOKIE_DOMAIN: ${ARCHIVE_COOKIE_DOMAIN:-}
@@ -42,9 +27,6 @@ services:
       LOG_LEVEL: ${ARCHIVE_LOG_LEVEL:-INFO}
     expose:
       - "8000"
-    depends_on:
-      archive-db:
-        condition: service_healthy
 
   archive-frontend:
     build:
@@ -64,7 +46,3 @@ services:
     depends_on:
       - archive-backend
       - archive-frontend
-
-volumes:
-  archive_pg_data:
-
