@@ -21,6 +21,7 @@ os.environ.setdefault("ARCHIVE_USER1_USERNAME", "tester")
 os.environ.setdefault("ARCHIVE_USER1_PASSWORD", "testpass")
 os.environ.setdefault("ARCHIVE_USER2_USERNAME", "")
 os.environ.setdefault("ARCHIVE_USER2_PASSWORD", "")
+os.environ.setdefault("MAX_LOGIN_ATTEMPTS_PER_15MIN", "1000")
 
 
 @pytest.fixture(scope="session")
@@ -64,6 +65,8 @@ async def setup_db(postgres_container):
 @pytest_asyncio.fixture
 async def s3_mock():
     """Spin up moto S3 server in-process and create the test bucket."""
+    import app.storage.s3_client as s3_mod
+    s3_mod._session = None  # discard stale connections from previous test's server
     from moto.server import ThreadedMotoServer
     server = ThreadedMotoServer(port=5000, verbose=False)
     server.start()
@@ -78,6 +81,7 @@ async def s3_mock():
         yield
     finally:
         server.stop()
+        s3_mod._session = None
 
 
 @pytest_asyncio.fixture
