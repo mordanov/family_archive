@@ -171,11 +171,6 @@ jobs:
             exit 1
           fi
 
-          if [ ! -f ./.env ]; then
-            echo ".env not found in $ARCHIVE_DIR — refusing to deploy without secrets." >&2
-            exit 1
-          fi
-
           chmod +x ./deploy/deploy.sh
 
           if ! bash ./deploy/deploy.sh; then
