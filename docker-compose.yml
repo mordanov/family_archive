@@ -1,0 +1,70 @@
+services:
+  archive-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${ARCHIVE_POSTGRES_DB:-archive}
+      POSTGRES_USER: ${ARCHIVE_POSTGRES_USER:-archive_user}
+      POSTGRES_PASSWORD: ${ARCHIVE_POSTGRES_PASSWORD:?required}
+    volumes:
+      - archive_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ARCHIVE_POSTGRES_USER:-archive_user} -d ${ARCHIVE_POSTGRES_DB:-archive}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  archive-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${ARCHIVE_POSTGRES_USER:-archive_user}:${ARCHIVE_POSTGRES_PASSWORD}@archive-db:5432/${ARCHIVE_POSTGRES_DB:-archive}
+      SECRET_KEY: ${ARCHIVE_SECRET_KEY:?required}
+      COOKIE_SECURE: "1"
+      COOKIE_DOMAIN: ${ARCHIVE_COOKIE_DOMAIN:-}
+      SESSION_LIFETIME_DAYS: ${ARCHIVE_SESSION_LIFETIME_DAYS:-30}
+      ARCHIVE_USER1_USERNAME: ${ARCHIVE_USER1_USERNAME:-user1}
+      ARCHIVE_USER1_PASSWORD: ${ARCHIVE_USER1_PASSWORD:?required}
+      ARCHIVE_USER2_USERNAME: ${ARCHIVE_USER2_USERNAME:-user2}
+      ARCHIVE_USER2_PASSWORD: ${ARCHIVE_USER2_PASSWORD:?required}
+      S3_ENDPOINT_URL: ${ARCHIVE_S3_ENDPOINT_URL:?required}
+      S3_REGION: ${ARCHIVE_S3_REGION:-fsn1}
+      S3_BUCKET: ${ARCHIVE_S3_BUCKET:?required}
+      S3_ACCESS_KEY: ${ARCHIVE_S3_ACCESS_KEY:?required}
+      S3_SECRET_KEY: ${ARCHIVE_S3_SECRET_KEY:?required}
+      S3_FORCE_PATH_STYLE: ${ARCHIVE_S3_FORCE_PATH_STYLE:-1}
+      MAX_FILE_SIZE_BYTES: ${ARCHIVE_MAX_FILE_SIZE_BYTES:-21474836480}
+      CHUNK_SIZE_BYTES: ${ARCHIVE_CHUNK_SIZE_BYTES:-8388608}
+      TRASH_RETENTION_DAYS: ${ARCHIVE_TRASH_RETENTION_DAYS:-30}
+      ALLOWED_ORIGINS: ${ARCHIVE_ALLOWED_ORIGINS:-https://archive.example.com}
+      LOG_LEVEL: ${ARCHIVE_LOG_LEVEL:-INFO}
+    expose:
+      - "8000"
+    depends_on:
+      archive-db:
+        condition: service_healthy
+
+  archive-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx-standalone.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - archive-backend
+      - archive-frontend
+
+volumes:
+  archive_pg_data:
+
