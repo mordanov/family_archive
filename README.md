@@ -17,13 +17,11 @@ previews for image/video/audio/zip, share dialog, trash, login.
 ## Phase 4 status
 Infrastructure & deployment complete:
 - Production `Dockerfile` (backend) with ffmpeg + non-root user + healthcheck.
-- Standalone `docker-compose.yml` (own postgres + nginx) for solo deployments.
 - Full integration into the shared **web-folders** stack: 3 nginx templates with
   large-upload tuning, automatic HTTP→HTTPS switch on certificate availability,
   shared Postgres role, certbot, deploy script, env contract.
 - CI: `.github/workflows/ci.yml` runs backend pytest + frontend vitest + Docker build.
-- VPS deploy: shared workflow `web-folders/.github/workflows/deploy-vps.yml` extended;
-  per-app `deploy/deploy.sh` for standalone use.
+- VPS deploy: shared workflow `web-folders/.github/workflows/deploy-vps.yml`.
 
 ## Run locally (dev)
 ```bash
@@ -33,12 +31,6 @@ docker compose -f docker-compose.dev.yml up --build
 # MinIO:    http://localhost:9001 (minioadmin / minioadmin)
 ```
 
-## Run in production (standalone)
-```bash
-cp .env.example .env  # fill in S3 + secrets + passwords
-./deploy/deploy.sh    # builds, starts, runs migrations, health-checks
-# Then put a TLS-terminating reverse proxy in front, or use the shared web-folders stack.
-```
 
 ## Run as part of the shared web-folders stack
 1. In `web-folders/.env`, set the new `ARCHIVE_*` values (see `.env.example`).
