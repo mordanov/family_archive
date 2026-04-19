@@ -4,10 +4,12 @@ import { Row } from './FileRow'
 import { Loader2, FolderOpen } from 'lucide-react'
 import { mapErrorToI18n } from '@/i18n/errors'
 import { useUI } from '@/stores/uiStore'
+import { useSelection } from '@/stores/selectionStore'
 
 export function FileList({ folderId }: { folderId: number }) {
   const { t } = useTranslation()
   const viewMode = useUI((s) => s.viewMode)
+  const selection = useSelection()
   const { data, isLoading, isError, error } = useFolderChildren(folderId)
   if (isLoading)
     return (
@@ -25,21 +27,40 @@ export function FileList({ folderId }: { folderId: number }) {
         <p className="text-xs">{t('folder.dragFilesHere')}</p>
       </div>
     )
+  const fileIds = data!.files.map((f) => f.id)
+  const selectedInFolder = fileIds.filter((id) => selection.files.has(id)).length
+  const allSelected = fileIds.length > 0 && selectedInFolder === fileIds.length
+
   return (
-    <div
-      className={
-        viewMode === 'grid'
-          ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3'
-          : 'rounded-md border border-surface-strong bg-surface'
-      }
-    >
+    <>
+      {fileIds.length > 0 && (
+        <div className="mb-2 flex items-center justify-between rounded border border-surface-strong bg-surface px-3 py-2 text-xs text-ink-muted">
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={(e) => (e.target.checked ? selection.selectAllFiles(fileIds) : selection.clearFiles())}
+            />
+            {t('file.selectAllInFolder', { count: fileIds.length })}
+          </label>
+          <span>{t('file.selectedCount', { count: selectedInFolder })}</span>
+        </div>
+      )}
+      <div
+        className={
+          viewMode === 'grid'
+            ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3'
+            : 'rounded-md border border-surface-strong bg-surface'
+        }
+      >
       {data!.folders.map((f) => (
         <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} />
       ))}
       {data!.files.map((f) => (
-        <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} />
+        <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} showFileCheckbox />
       ))}
-    </div>
+      </div>
+    </>
   )
 }
 

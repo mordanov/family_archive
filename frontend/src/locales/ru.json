@@ -12,7 +12,11 @@
     "language": "Язык",
     "close": "Закрыть",
     "done": "Готово",
-    "never": "никогда"
+    "never": "никогда",
+    "moveSelected": "Переместить выбранное",
+    "moveHere": "Переместить сюда",
+    "selectedMixed": "Выбрано: файлов {{files}}, папок {{folders}}",
+    "bulkMoveTitleMixed": "Переместить выбранные элементы ({{count}})"
   },
   "auth": {
     "login": "Вход",
@@ -45,17 +49,35 @@
     "renameTo": "Переименовать в",
     "kindFolder": "папку",
     "kindFile": "файл",
-    "typeLabel": "Папка"
+    "typeLabel": "Папка",
+    "noSubfolders": "В этой папке нет подпапок.",
+    "bulkMoved": "Перемещено папок: {{count}}.",
+    "bulkMoveFailed": "Не удалось переместить папок: {{count}}.",
+    "bulkMoveProtected": "Пропущено папок (цель — сама папка/дочерняя): {{count}}."
   },
   "file": {
     "file": "Файл",
     "files": "Файлы",
+    "select": "Выбрать",
+    "selectAllInFolder": "Выбрать все файлы в этой папке ({{count}})",
+    "selectedCount": "Выбрано: {{count}}",
     "size": "Размер",
     "created": "Создано",
     "updated": "Обновлено",
     "download": "Загрузить",
     "share": "Поделиться",
-    "preview": "Просмотр"
+    "preview": "Просмотр",
+    "bulkMove": "Переместить выбранные",
+    "bulkMoveTitle": "Переместить файлов: {{count}}",
+    "bulkMoveHint": "Выберите папку назначения и подтвердите перемещение.",
+    "moveHere": "Переместить сюда",
+    "bulkMoved": "Перемещено файлов: {{count}}.",
+    "bulkMoveFailed": "Не удалось переместить файлов: {{count}}.",
+    "bulkDelete": "Удалить выбранные",
+    "bulkDeleteTitle": "Удалить файлов: {{count}}",
+    "bulkDeleteConfirm": "Удалить {{count}} выбранных файлов?",
+    "bulkDeleted": "Удалено файлов: {{count}}.",
+    "bulkDeleteFailed": "Не удалось удалить файлов: {{count}}."
   },
   "upload": {
     "uploads": "Загрузки",

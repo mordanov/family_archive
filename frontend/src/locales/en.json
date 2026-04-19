@@ -12,7 +12,11 @@
     "language": "Language",
     "close": "Close",
     "done": "Done",
-    "never": "never"
+    "never": "never",
+    "moveSelected": "Move selected",
+    "moveHere": "Move here",
+    "selectedMixed": "Selected: files {{files}}, folders {{folders}}",
+    "bulkMoveTitleMixed": "Move selected items ({{count}})"
   },
   "auth": {
     "login": "Sign in",
@@ -45,17 +49,35 @@
     "renameTo": "Rename to",
     "kindFolder": "folder",
     "kindFile": "file",
-    "typeLabel": "Folder"
+    "typeLabel": "Folder",
+    "noSubfolders": "No subfolders in this location.",
+    "bulkMoved": "Moved folders: {{count}}.",
+    "bulkMoveFailed": "Failed to move folders: {{count}}.",
+    "bulkMoveProtected": "Skipped folders (target is self/descendant): {{count}}."
   },
   "file": {
     "file": "File",
     "files": "Files",
+    "select": "Select",
+    "selectAllInFolder": "Select all files in this folder ({{count}})",
+    "selectedCount": "Selected: {{count}}",
     "size": "Size",
     "created": "Created",
     "updated": "Updated",
     "download": "Download",
     "share": "Share",
-    "preview": "Preview"
+    "preview": "Preview",
+    "bulkMove": "Move selected",
+    "bulkMoveTitle": "Move {{count}} file(s)",
+    "bulkMoveHint": "Choose destination folder, then confirm move.",
+    "moveHere": "Move here",
+    "bulkMoved": "Moved {{count}} file(s).",
+    "bulkMoveFailed": "Failed to move {{count}} file(s).",
+    "bulkDelete": "Delete selected",
+    "bulkDeleteTitle": "Delete {{count}} file(s)",
+    "bulkDeleteConfirm": "Delete {{count}} selected file(s)?",
+    "bulkDeleted": "Deleted {{count}} file(s).",
+    "bulkDeleteFailed": "Failed to delete {{count}} file(s)."
   },
   "upload": {
     "uploads": "Uploads",

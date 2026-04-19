@@ -4,6 +4,9 @@ interface Sel {
   files: Set<number>
   folders: Set<number>
   toggleFile: (id: number) => void
+  setFileSelected: (id: number, selected: boolean) => void
+  selectAllFiles: (ids: number[]) => void
+  clearFiles: () => void
   toggleFolder: (id: number) => void
   clear: () => void
   selectOnlyFile: (id: number) => void
@@ -18,6 +21,14 @@ export const useSelection = create<Sel>((set) => ({
       n.has(id) ? n.delete(id) : n.add(id)
       return { files: n }
     }),
+  setFileSelected: (id, selected) =>
+    set((s) => {
+      const n = new Set(s.files)
+      selected ? n.add(id) : n.delete(id)
+      return { files: n }
+    }),
+  selectAllFiles: (ids) => set({ files: new Set(ids) }),
+  clearFiles: () => set({ files: new Set() }),
   toggleFolder: (id) =>
     set((s) => {
       const n = new Set(s.folders)
