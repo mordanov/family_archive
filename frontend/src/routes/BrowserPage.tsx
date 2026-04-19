@@ -137,6 +137,12 @@ export function BrowserPage() {
                 <Trash2 size={14} /> {t('common.deleteSelected')}
               </button>
             )}
+            <button
+              onClick={() => selection.clear()}
+              className="inline-flex items-center gap-1 rounded border border-surface-strong px-2 py-1 hover:bg-surface-muted"
+            >
+              {t('common.clearSelection')}
+            </button>
           </div>
         )}
 

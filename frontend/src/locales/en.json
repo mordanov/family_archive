@@ -15,6 +15,7 @@
     "never": "never",
     "moveSelected": "Move selected",
     "deleteSelected": "Delete selected",
+    "clearSelection": "Clear selection",
     "bulkDeleteConfirmMixed": "Delete selected items? Files: {{files}}, folders: {{folders}}.",
     "moveHere": "Move here",
     "selectedMixed": "Selected: files {{files}}, folders {{folders}}",
