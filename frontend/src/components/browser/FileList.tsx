@@ -28,22 +28,39 @@ export function FileList({ folderId }: { folderId: number }) {
       </div>
     )
   const fileIds = data!.files.map((f) => f.id)
+  const folderIds = data!.folders.map((f) => f.id)
   const selectedInFolder = fileIds.filter((id) => selection.files.has(id)).length
+  const selectedFoldersInFolder = folderIds.filter((id) => selection.folders.has(id)).length
   const allSelected = fileIds.length > 0 && selectedInFolder === fileIds.length
+  const allFoldersSelected = folderIds.length > 0 && selectedFoldersInFolder === folderIds.length
 
   return (
     <>
-      {fileIds.length > 0 && (
+      {(fileIds.length > 0 || folderIds.length > 0) && (
         <div className="mb-2 flex items-center justify-between rounded border border-surface-strong bg-surface px-3 py-2 text-xs text-ink-muted">
-          <label className="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              onChange={(e) => (e.target.checked ? selection.selectAllFiles(fileIds) : selection.clearFiles())}
-            />
-            {t('file.selectAllInFolder', { count: fileIds.length })}
-          </label>
-          <span>{t('file.selectedCount', { count: selectedInFolder })}</span>
+          <div className="flex flex-wrap items-center gap-4">
+            {fileIds.length > 0 && (
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(e) => (e.target.checked ? selection.selectAllFiles(fileIds) : selection.clearFiles())}
+                />
+                {t('file.selectAllInFolder', { count: fileIds.length })}
+              </label>
+            )}
+            {folderIds.length > 0 && (
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={allFoldersSelected}
+                  onChange={(e) => (e.target.checked ? selection.selectAllFolders(folderIds) : selection.clearFolders())}
+                />
+                {t('folder.selectAllInFolder', { count: folderIds.length })}
+              </label>
+            )}
+          </div>
+          <span>{t('common.selectedMixed', { files: selectedInFolder, folders: selectedFoldersInFolder })}</span>
         </div>
       )}
       <div
@@ -54,7 +71,7 @@ export function FileList({ folderId }: { folderId: number }) {
         }
       >
       {data!.folders.map((f) => (
-        <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} />
+        <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} showFolderCheckbox />
       ))}
       {data!.files.map((f) => (
         <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} showFileCheckbox />

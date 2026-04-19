@@ -28,9 +28,10 @@ interface RowProps {
   parentId: number
   viewMode: 'list' | 'grid'
   showFileCheckbox?: boolean
+  showFolderCheckbox?: boolean
 }
 
-export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }: RowProps) {
+export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, showFolderCheckbox = false }: RowProps) {
   const { t } = useTranslation()
   const nav = useNavigate()
   const qc = useQueryClient()
@@ -84,6 +85,16 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }
 
       {/* Name */}
       <div className={`min-w-0 ${isGrid ? '' : 'flex-1'}`}>
+        {isFolder && showFolderCheckbox && (
+          <label className="mb-1 inline-flex items-center gap-2 text-xs text-ink-muted" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => sel.setFolderSelected(item.id, e.target.checked)}
+            />
+            {t('file.select')}
+          </label>
+        )}
         {!isFolder && showFileCheckbox && (
           <label className="mb-1 inline-flex items-center gap-2 text-xs text-ink-muted" onClick={(e) => e.stopPropagation()}>
             <input

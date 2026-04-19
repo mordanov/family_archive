@@ -76,12 +76,21 @@ export function BrowserPage() {
 
   async function runBulkDelete() {
     setBulkDeleteOpen(false)
-    const ops = await Promise.allSettled(selectedFileIds.map((fileId) => filesApi.remove(fileId)))
-    const success = ops.filter((r) => r.status === 'fulfilled').length
-    const failed = ops.length - success
-    if (success) toast.success(t('file.bulkDeleted', { count: success }))
-    if (failed) toast.error(t('file.bulkDeleteFailed', { count: failed }))
-    selection.clearFiles()
+    const [folderOps, fileOps] = await Promise.all([
+      Promise.allSettled(selectedFolderIds.map((folderId) => foldersApi.remove(folderId))),
+      Promise.allSettled(selectedFileIds.map((fileId) => filesApi.remove(fileId))),
+    ])
+    const deletedFolders = folderOps.filter((r) => r.status === 'fulfilled').length
+    const failedFolders = folderOps.length - deletedFolders
+    const deletedFiles = fileOps.filter((r) => r.status === 'fulfilled').length
+    const failedFiles = fileOps.length - deletedFiles
+
+    if (deletedFolders) toast.success(t('folder.bulkDeleted', { count: deletedFolders }))
+    if (failedFolders) toast.error(t('folder.bulkDeleteFailed', { count: failedFolders }))
+    if (deletedFiles) toast.success(t('file.bulkDeleted', { count: deletedFiles }))
+    if (failedFiles) toast.error(t('file.bulkDeleteFailed', { count: failedFiles }))
+
+    selection.clear()
     qc.invalidateQueries({ queryKey: ['folder-children', folderId] })
   }
 
@@ -120,12 +129,12 @@ export function BrowserPage() {
             >
               <MoveRight size={14} /> {t('common.moveSelected')}
             </button>
-            {selectedFileIds.length > 0 && (
+            {hasSelection && (
               <button
                 onClick={() => setBulkDeleteOpen(true)}
                 className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
               >
-                <Trash2 size={14} /> {t('file.bulkDelete')}
+                <Trash2 size={14} /> {t('common.deleteSelected')}
               </button>
             )}
           </div>
@@ -145,9 +154,9 @@ export function BrowserPage() {
         open={bulkDeleteOpen}
         onClose={() => setBulkDeleteOpen(false)}
         onConfirm={runBulkDelete}
-        title={t('file.bulkDeleteTitle', { count: selectedFileIds.length })}
-        message={t('file.bulkDeleteConfirm', { count: selectedFileIds.length })}
-        confirmText={t('file.bulkDelete')}
+        title={t('common.deleteSelected')}
+        message={t('common.bulkDeleteConfirmMixed', { files: selectedFileIds.length, folders: selectedFolderIds.length })}
+        confirmText={t('common.deleteSelected')}
         danger
       />
       <PreviewModal />

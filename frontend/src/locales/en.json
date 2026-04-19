@@ -14,6 +14,8 @@
     "done": "Done",
     "never": "never",
     "moveSelected": "Move selected",
+    "deleteSelected": "Delete selected",
+    "bulkDeleteConfirmMixed": "Delete selected items? Files: {{files}}, folders: {{folders}}.",
     "moveHere": "Move here",
     "selectedMixed": "Selected: files {{files}}, folders {{folders}}",
     "bulkMoveTitleMixed": "Move selected items ({{count}})"
@@ -53,7 +55,11 @@
     "noSubfolders": "No subfolders in this location.",
     "bulkMoved": "Moved folders: {{count}}.",
     "bulkMoveFailed": "Failed to move folders: {{count}}.",
-    "bulkMoveProtected": "Skipped folders (target is self/descendant): {{count}}."
+    "bulkMoveProtected": "Skipped folders (target is self/descendant): {{count}}.",
+    "selectAllInFolder": "Select all folders in this folder ({{count}})",
+    "selectedCount": "Selected folders: {{count}}",
+    "bulkDeleted": "Deleted folders: {{count}}.",
+    "bulkDeleteFailed": "Failed to delete folders: {{count}}."
   },
   "file": {
     "file": "File",
