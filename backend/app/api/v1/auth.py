@@ -25,12 +25,13 @@ def _client_ip(request: Request) -> str | None:
 async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
     ip = _client_ip(request)
     _login_limiter.check(f"login:{ip}")
-    user, sess = await auth_service.login(db, payload.username, payload.password, ip, request.headers.get("user-agent"))
+    user, sess = await auth_service.login(db, payload.username, payload.password, ip, request.headers.get("user-agent"), remember_me=payload.remember_me)
+    lifetime_days = settings.SESSION_LIFETIME_DAYS if payload.remember_me else settings.SESSION_SHORT_LIFETIME_DAYS
     resp = Response(status_code=204)
     resp.set_cookie(
         key=settings.SESSION_COOKIE_NAME,
         value=str(sess.id),
-        max_age=settings.SESSION_LIFETIME_DAYS * 86400,
+        max_age=lifetime_days * 86400,
         httponly=True,
         secure=settings.COOKIE_SECURE,
         samesite="lax",

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-archive-secret"
     SESSION_COOKIE_NAME: str = "archive_session"
     SESSION_LIFETIME_DAYS: int = 30
+    SESSION_SHORT_LIFETIME_DAYS: int = 1
     COOKIE_SECURE: bool = True
     COOKIE_DOMAIN: str | None = None
 

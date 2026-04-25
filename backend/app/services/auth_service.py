@@ -11,14 +11,15 @@ from app.repositories import users as users_repo
 
 
 async def login(
-    db: AsyncSession, username: str, password: str, ip: str | None, user_agent: str | None
+    db: AsyncSession, username: str, password: str, ip: str | None, user_agent: str | None,
+    remember_me: bool = False,
 ):
     user = await users_repo.get_by_username(db, username)
     if not user or not verify_password(user.password_hash, password):
         raise Unauthorized("Invalid credentials")
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(password)
-    sess = await create_session(db, user.id, ip, user_agent)
+    sess = await create_session(db, user.id, ip, user_agent, remember_me=remember_me)
     await audit_repo.log(db, user_id=user.id, action="login", ip=ip)
     return user, sess
 

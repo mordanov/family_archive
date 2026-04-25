@@ -25,7 +25,8 @@
     "password": "Пароль",
     "signingIn": "Вход...",
     "loginFailed": "Ошибка входа",
-    "signInToYourArchive": "Войдите в свой архив"
+    "signInToYourArchive": "Войдите в свой архив",
+    "rememberMe": "Запомнить меня"
   },
   "navigation": {
     "trash": "Корзина",

@@ -25,7 +25,8 @@
     "password": "Password",
     "signingIn": "Signing in…",
     "loginFailed": "Login failed",
-    "signInToYourArchive": "Sign in to your archive"
+    "signInToYourArchive": "Sign in to your archive",
+    "rememberMe": "Remember me"
   },
   "navigation": {
     "trash": "Trash",

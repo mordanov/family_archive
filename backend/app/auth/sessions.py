@@ -13,12 +13,14 @@ from app.models import Session, User
 
 
 async def create_session(
-    db: AsyncSession, user_id: int, ip: str | None, user_agent: str | None
+    db: AsyncSession, user_id: int, ip: str | None, user_agent: str | None,
+    remember_me: bool = False,
 ) -> Session:
+    lifetime = settings.SESSION_LIFETIME_DAYS if remember_me else settings.SESSION_SHORT_LIFETIME_DAYS
     s = Session(
         id=uuid.uuid4(),
         user_id=user_id,
-        expires_at=utcnow() + timedelta(days=settings.SESSION_LIFETIME_DAYS),
+        expires_at=utcnow() + timedelta(days=lifetime),
         ip=ip,
         user_agent=user_agent,
     )

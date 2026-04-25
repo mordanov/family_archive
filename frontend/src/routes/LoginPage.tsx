@@ -12,9 +12,10 @@ export function LoginPage() {
   const me = useQuery({ queryKey: ['me'], queryFn: authApi.me, retry: false, refetchOnWindowFocus: false })
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('remember_me') === 'true')
   const nav = useNavigate()
   const m = useMutation({
-    mutationFn: () => authApi.login(username, password),
+    mutationFn: () => { localStorage.setItem('remember_me', String(rememberMe)); return authApi.login(username, password, rememberMe) },
     onSuccess: () => nav('/', { replace: true }),
     onError: (e: unknown) => toast.error(mapErrorToI18n(t, e, 'auth.loginFailed')),
   })
@@ -53,6 +54,15 @@ export function LoginPage() {
             required
             className="mt-1 w-full rounded border border-surface-strong px-3 py-2 outline-none focus:border-accent"
           />
+        </label>
+        <label className="mb-5 flex cursor-pointer items-center gap-2 text-sm text-ink-muted">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="shrink-0"
+          />
+          <span>{t('auth.rememberMe')}</span>
         </label>
         <button
           type="submit"
