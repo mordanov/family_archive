@@ -1,6 +1,3 @@
-        title={t('file.bulkDeleteTitle', { count: selectedFileIds.length })}
-        message={t('file.bulkDeleteConfirm', { count: selectedFileIds.length })}
-        confirmText={t('file.bulkDelete')}
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -71,7 +68,6 @@ export function BrowserPage() {
     if (movedFiles) toast.success(t('file.bulkMoved', { count: movedFiles }))
     if (failedFiles) toast.error(t('file.bulkMoveFailed', { count: failedFiles }))
 
-    selection.clearFiles()
     selection.clear()
     qc.invalidateQueries({ queryKey: ['folder-children', folderId] })
     qc.invalidateQueries({ queryKey: ['folder-children', targetFolderId] })
@@ -123,17 +119,15 @@ export function BrowserPage() {
             >
               <MoveRight size={14} /> {t('common.moveSelected')}
             </button>
-            {hasSelection && (
-              <button
-                onClick={() => setBulkDeleteOpen(true)}
-                className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
-              >
-                <Trash2 size={14} /> {t('common.deleteSelected')}
-              </button>
-            )}
+            <button
+              onClick={() => setBulkDeleteOpen(true)}
+              className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
+            >
+              <Trash2 size={14} /> {t('common.deleteSelected')}
+            </button>
             <button
               onClick={() => selection.clear()}
-            {selectedFileIds.length > 0 && (
+              className="ml-auto text-ink-muted hover:text-ink"
             >
               {t('common.clearSelection')}
             </button>
@@ -144,14 +138,22 @@ export function BrowserPage() {
       </div>
       <NewFolderDialog open={newOpen} onClose={() => setNewOpen(false)} parentId={folderId} />
       <BulkMoveDialog
-                <Trash2 size={14} /> {t('file.bulkDelete')}
+        open={bulkMoveOpen}
         selectedCount={totalSelected}
-        message={t('common.bulkDeleteConfirmMixed', { files: selectedFileIds.length, folders: selectedFolderIds.length })}
-        confirmText={t('common.deleteSelected')}
+        initialFolderId={folderId}
+        onClose={() => setBulkMoveOpen(false)}
+        onConfirm={runBulkMove}
+      />
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        onConfirm={runBulkDelete}
+        title={t('file.bulkDeleteTitle', { count: selectedFileIds.length })}
+        message={t('file.bulkDeleteConfirm', { count: selectedFileIds.length })}
+        confirmText={t('file.bulkDelete')}
         danger
       />
       <PreviewModal />
     </DropZone>
   )
 }
-

@@ -28,9 +28,10 @@ interface RowProps {
   parentId: number
   viewMode: 'list' | 'grid'
   showFileCheckbox?: boolean
+  showFolderCheckbox?: boolean
 }
 
-export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }: RowProps) {
+export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, showFolderCheckbox = false }: RowProps) {
   const { t } = useTranslation()
   const nav = useNavigate()
   const qc = useQueryClient()
@@ -54,13 +55,15 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }
     else setPreview(item.id)
   }
 
-  const file = !isFolder ? (item as FileItem) : null
-  const showThumb = file && file.has_thumbnail
-  const isImage = file && classifyMime(file.content_type, file.name) === 'image'
-
   const isGrid = viewMode === 'grid'
   const actionSlotClass = isGrid
     ? 'mt-2 flex w-full items-center justify-end gap-1'
+    : 'ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100'
+  const showCheckbox = isFolder ? showFolderCheckbox : showFileCheckbox
+
+  return (
+    <div
+      tabIndex={0}
       onDoubleClick={onDoubleClick}
       className={`group outline-none hover:bg-surface ${isSelected ? 'bg-accent/10' : ''} ${
         isGrid
@@ -81,21 +84,16 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }
               else sel.setFileSelected(item.id, e.target.checked)
             }}
             aria-label={t('file.select')}
+          />
+        ) : (
+          isFolder
+            ? <FolderIcon size={18} className="shrink-0 text-ink-muted" />
+            : kindIcon(item as FileItem)
         )}
       </div>
 
       {/* Name */}
       <div className={`min-w-0 ${isGrid ? '' : 'flex-1'}`}>
-        {!isFolder && showFileCheckbox && (
-          <label className="mb-1 inline-flex items-center gap-2 text-xs text-ink-muted" onClick={(e) => e.stopPropagation()}>
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={(e) => sel.setFileSelected(item.id, e.target.checked)}
-            />
-            {t('file.select')}
-          </label>
-        )}
         <div className="truncate text-sm text-ink">{item.name || t('navigation.home')}</div>
         <div className="truncate text-xs text-ink-muted">
           {isFolder ? t('folder.typeLabel') : `${formatBytes((item as FileItem).size_bytes)} • ${(item as FileItem).content_type}`}
@@ -106,7 +104,7 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }
       <div className={`${isGrid ? 'mt-1 text-xs text-ink-muted' : 'hidden w-32 shrink-0 text-xs text-ink-muted sm:block'}`}>{formatDate(item.updated_at)}</div>
 
       {/* Actions */}
-      <div className={`${actionSlotClass} ${actionVisibilityClass}`}>
+      <div className={actionSlotClass}>
         <button
           className="rounded p-1.5 text-ink-muted hover:bg-surface-strong"
           title={t('folder.rename')}
@@ -120,10 +118,9 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }
         <button
           className="rounded p-1.5 text-red-600 hover:bg-red-50"
           title={t('common.delete')}
-      <div className={`${isGrid ? 'mt-2 flex items-center gap-1 opacity-100' : 'ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100'}`}>
+          onClick={(e) => { e.stopPropagation(); removeMut.mutate() }}
         ><Trash2 size={15} /></button>
       </div>
     </div>
   )
 }
-

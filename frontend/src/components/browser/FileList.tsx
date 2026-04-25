@@ -30,16 +30,13 @@ export function FileList({ folderId }: { folderId: number }) {
   const fileIds = data!.files.map((f) => f.id)
   const selectedInFolder = fileIds.filter((id) => selection.files.has(id)).length
   const allSelected = fileIds.length > 0 && selectedInFolder === fileIds.length
-  const allFoldersSelected = folderIds.length > 0 && selectedFoldersInFolder === folderIds.length
+  const folderIds = data!.folders.map((f) => f.id)
+  const selectedFoldersInFolder = folderIds.filter((id) => selection.folders.has(id)).length
 
   return (
-    <>
-        <div className="mb-2 flex items-center justify-between rounded border border-surface-strong bg-surface px-3 py-2 text-xs text-ink-muted">
-      {fileIds.length > 0 && (
-            {fileIds.length > 0 && (
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="checkbox"
+    <div>
+      <div className="mb-2 flex items-center justify-between rounded border border-surface-strong bg-surface px-3 py-2 text-xs text-ink-muted">
+        {fileIds.length > 0 && (
           <label className="inline-flex items-center gap-2">
             <input
               type="checkbox"
@@ -48,19 +45,17 @@ export function FileList({ folderId }: { folderId: number }) {
             />
             {t('file.selectAllInFolder', { count: fileIds.length })}
           </label>
-          <span>{t('file.selectedCount', { count: selectedInFolder })}</span>
-            : 'rounded-md border border-surface-strong bg-surface'
-        }
-      >
-      {data!.folders.map((f) => (
-        <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} />
-        <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} showFolderCheckbox />
-      ))}
-      {data!.files.map((f) => (
-        <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} showFileCheckbox />
-      ))}
+        )}
+        <span>{t('file.selectedCount', { count: selectedInFolder + selectedFoldersInFolder })}</span>
       </div>
-    </>
+      <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4' : ''}>
+        {data!.folders.map((f) => (
+          <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} showFolderCheckbox />
+        ))}
+        {data!.files.map((f) => (
+          <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} showFileCheckbox />
+        ))}
+      </div>
+    </div>
   )
 }
-
