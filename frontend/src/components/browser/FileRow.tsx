@@ -28,10 +28,9 @@ interface RowProps {
   parentId: number
   viewMode: 'list' | 'grid'
   showFileCheckbox?: boolean
-  showFolderCheckbox?: boolean
 }
 
-export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, showFolderCheckbox = false }: RowProps) {
+export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false }: RowProps) {
   const { t } = useTranslation()
   const nav = useNavigate()
   const qc = useQueryClient()
@@ -58,20 +57,10 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
   const file = !isFolder ? (item as FileItem) : null
   const showThumb = file && file.has_thumbnail
   const isImage = file && classifyMime(file.content_type, file.name) === 'image'
-  const showCheckbox = (isFolder && showFolderCheckbox) || (!isFolder && showFileCheckbox)
 
   const isGrid = viewMode === 'grid'
   const actionSlotClass = isGrid
     ? 'mt-2 flex w-full items-center justify-end gap-1'
-    : 'ml-2 flex w-[108px] shrink-0 items-center justify-end gap-1'
-  const actionVisibilityClass = isGrid
-    ? 'opacity-100'
-    : 'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100'
-
-  return (
-    <div
-      tabIndex={0}
-      onClick={() => (isFolder ? sel.toggleFolder(item.id) : sel.toggleFile(item.id))}
       onDoubleClick={onDoubleClick}
       className={`group outline-none hover:bg-surface ${isSelected ? 'bg-accent/10' : ''} ${
         isGrid
@@ -92,25 +81,21 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
               else sel.setFileSelected(item.id, e.target.checked)
             }}
             aria-label={t('file.select')}
-          />
-        ) : (
-          <span aria-hidden="true" className="block h-4 w-4" />
-        )}
-      </div>
-
-      {/* Icon / thumb */}
-      <div className={`overflow-hidden rounded bg-surface-muted ${isGrid ? 'mb-2 h-28 w-full' : 'h-9 w-9 shrink-0'}`}>
-        {showThumb && isImage ? (
-          <img src={filesApi.thumbnailUrl(file!.id, 256)} alt="" className="h-full w-full object-cover" />
-        ) : isFolder ? (
-          <div className="flex h-full w-full items-center justify-center"><FolderIcon size={20} className="text-ink-muted" /></div>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">{kindIcon(file!)}</div>
         )}
       </div>
 
       {/* Name */}
       <div className={`min-w-0 ${isGrid ? '' : 'flex-1'}`}>
+        {!isFolder && showFileCheckbox && (
+          <label className="mb-1 inline-flex items-center gap-2 text-xs text-ink-muted" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => sel.setFileSelected(item.id, e.target.checked)}
+            />
+            {t('file.select')}
+          </label>
+        )}
         <div className="truncate text-sm text-ink">{item.name || t('navigation.home')}</div>
         <div className="truncate text-xs text-ink-muted">
           {isFolder ? t('folder.typeLabel') : `${formatBytes((item as FileItem).size_bytes)} • ${(item as FileItem).content_type}`}
@@ -135,7 +120,7 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
         <button
           className="rounded p-1.5 text-red-600 hover:bg-red-50"
           title={t('common.delete')}
-          onClick={(e) => { e.stopPropagation(); if (confirm(t('folder.deleteConfirm', { name: item.name }))) removeMut.mutate() }}
+      <div className={`${isGrid ? 'mt-2 flex items-center gap-1 opacity-100' : 'ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100'}`}>
         ><Trash2 size={15} /></button>
       </div>
     </div>

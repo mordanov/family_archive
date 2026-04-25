@@ -14,9 +14,6 @@
     "done": "Готово",
     "never": "никогда",
     "moveSelected": "Переместить выбранное",
-    "deleteSelected": "Удалить выбранное",
-    "clearSelection": "Снять выделение",
-    "bulkDeleteConfirmMixed": "Удалить выбранные элементы? Файлов: {{files}}, папок: {{folders}}.",
     "moveHere": "Переместить сюда",
     "selectedMixed": "Выбрано: файлов {{files}}, папок {{folders}}",
     "bulkMoveTitleMixed": "Переместить выбранные элементы ({{count}})"
@@ -56,11 +53,7 @@
     "noSubfolders": "В этой папке нет подпапок.",
     "bulkMoved": "Перемещено папок: {{count}}.",
     "bulkMoveFailed": "Не удалось переместить папок: {{count}}.",
-    "bulkMoveProtected": "Пропущено папок (цель — сама папка/дочерняя): {{count}}.",
-    "selectAllInFolder": "Выбрать все папки в этой папке ({{count}})",
-    "selectedCount": "Выбрано папок: {{count}}",
-    "bulkDeleted": "Удалено папок: {{count}}.",
-    "bulkDeleteFailed": "Не удалось удалить папок: {{count}}."
+    "bulkMoveProtected": "Пропущено папок (цель — сама папка/дочерняя): {{count}}."
   },
   "file": {
     "file": "Файл",
