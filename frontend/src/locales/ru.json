@@ -84,6 +84,7 @@
     "uploads": "Загрузки",
     "uploading": "Загрузка",
     "uploading_count": "Загрузки ({{count}})",
+    "queued_count": "в очереди: {{count}}",
     "status": "{{status}}",
     "bytesUploaded": "{{uploaded}} / {{total}}",
     "pause": "Пауза",

@@ -84,6 +84,7 @@
     "uploads": "Uploads",
     "uploading": "Uploading",
     "uploading_count": "Uploads ({{count}})",
+    "queued_count": "queued: {{count}}",
     "status": "{{status}}",
     "bytesUploaded": "{{uploaded}} / {{total}}",
     "pause": "Pause",

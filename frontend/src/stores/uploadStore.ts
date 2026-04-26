@@ -4,6 +4,9 @@ import { uploadsApi } from '@/api/uploads'
 import { uploadsIDB } from '@/lib/idb'
 import { chunksOf } from '@/lib/chunking'
 
+const MAX_CONCURRENT = 10
+const DONE_REMOVAL_DELAY_MS = 3000
+
 export type UploadStatus =
   | 'queued'
   | 'preparing'
@@ -32,7 +35,7 @@ export interface UploadItem {
 
 interface UploadStore {
   items: Record<string, UploadItem>
-  add: (file: File, folderId: number) => Promise<void>
+  add: (file: File, folderId: number) => void
   start: (localId: string) => Promise<void>
   pause: (localId: string) => void
   resume: (localId: string) => Promise<void>
@@ -45,122 +48,148 @@ const newId = () =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (crypto as any).randomUUID?.() ?? Math.random().toString(36).slice(2)
 
-export const useUploads = create<UploadStore>((set, get) => ({
-  items: {},
+export const useUploads = create<UploadStore>((set, get) => {
+  function scheduleNext() {
+    const items = Object.values(get().items)
+    const active = items.filter(
+      (i) => i.status === 'preparing' || i.status === 'uploading' || i.status === 'completing',
+    ).length
+    if (active >= MAX_CONCURRENT) return
+    const next = items.find((i) => i.status === 'queued')
+    if (next) get().start(next.localId)
+  }
 
-  async add(file, folderId) {
-    const localId = newId()
-    set((s) => ({
-      items: {
-        ...s.items,
-        [localId]: {
-          localId,
-          file,
-          folderId,
-          filename: file.name,
-          size: file.size,
-          contentType: file.type || 'application/octet-stream',
-          chunkSize: 0,
-          totalParts: 0,
-          uploadedParts: 0,
-          bytesUploaded: 0,
-          status: 'queued',
+  return {
+    items: {},
+
+    add(file, folderId) {
+      const localId = newId()
+      set((s) => ({
+        items: {
+          ...s.items,
+          [localId]: {
+            localId,
+            file,
+            folderId,
+            filename: file.name,
+            size: file.size,
+            contentType: file.type || 'application/octet-stream',
+            chunkSize: 0,
+            totalParts: 0,
+            uploadedParts: 0,
+            bytesUploaded: 0,
+            status: 'queued',
+          },
         },
-      },
-    }))
-    await get().start(localId)
-  },
+      }))
+      scheduleNext()
+    },
 
-  async start(localId) {
-    const item = get().items[localId]
-    if (!item || !item.file) return
-    set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'preparing' } } }))
-    try {
-      const init = await uploadsApi.init(item.folderId, item.filename, item.size, item.contentType)
-      const persisted = {
-        uploadId: init.id,
-        folderId: item.folderId,
-        filename: item.filename,
-        size: item.size,
-        contentType: item.contentType,
-        chunkSize: init.chunk_size,
-        totalParts: init.total_parts,
-        receivedParts: init.parts.map((p) => p.part_number),
-        createdAt: Date.now(),
+    async start(localId) {
+      const item = get().items[localId]
+      if (!item || !item.file) return
+      set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'preparing' } } }))
+      try {
+        const init = await uploadsApi.init(item.folderId, item.filename, item.size, item.contentType)
+        const persisted = {
+          uploadId: init.id,
+          folderId: item.folderId,
+          filename: item.filename,
+          size: item.size,
+          contentType: item.contentType,
+          chunkSize: init.chunk_size,
+          totalParts: init.total_parts,
+          receivedParts: init.parts.map((p) => p.part_number),
+          createdAt: Date.now(),
+        }
+        await uploadsIDB.put(persisted)
+        set((s) => ({
+          items: {
+            ...s.items,
+            [localId]: {
+              ...s.items[localId],
+              uploadId: init.id,
+              chunkSize: init.chunk_size,
+              totalParts: init.total_parts,
+              uploadedParts: init.parts.length,
+              bytesUploaded: init.parts.reduce((a, p) => a + p.size, 0),
+              status: 'uploading',
+            },
+          },
+        }))
+        await runUploadLoop(localId, set, get)
+      } catch (e) {
+        set((s) => ({
+          items: { ...s.items, [localId]: { ...s.items[localId], status: 'error', error: String(e) } },
+        }))
+      } finally {
+        scheduleNext()
+        // Auto-remove successfully completed items after a short delay
+        if (get().items[localId]?.status === 'done') {
+          setTimeout(() => {
+            if (get().items[localId]?.status === 'done') {
+              set((s) => {
+                const { [localId]: _, ...rest } = s.items
+                return { items: rest }
+              })
+            }
+          }, DONE_REMOVAL_DELAY_MS)
+        }
       }
-      await uploadsIDB.put(persisted)
+    },
+
+    pause(localId) {
+      const item = get().items[localId]
+      item?.ctrl?.abort()
+      set((s) =>
+        s.items[localId]
+          ? { items: { ...s.items, [localId]: { ...s.items[localId], status: 'paused', ctrl: undefined } } }
+          : s,
+      )
+    },
+
+    async resume(localId) {
+      const item = get().items[localId]
+      if (!item || !item.file || !item.uploadId) return
+      // refresh server-side parts
+      const info = await uploadsApi.info(item.uploadId)
       set((s) => ({
         items: {
           ...s.items,
           [localId]: {
             ...s.items[localId],
-            uploadId: init.id,
-            chunkSize: init.chunk_size,
-            totalParts: init.total_parts,
-            uploadedParts: init.parts.length,
-            bytesUploaded: init.parts.reduce((a, p) => a + p.size, 0),
+            uploadedParts: info.parts.length,
+            bytesUploaded: info.parts.reduce((a, p) => a + p.size, 0),
             status: 'uploading',
           },
         },
       }))
       await runUploadLoop(localId, set, get)
-    } catch (e) {
-      set((s) => ({
-        items: { ...s.items, [localId]: { ...s.items[localId], status: 'error', error: String(e) } },
-      }))
-    }
-  },
+    },
 
-  pause(localId) {
-    const item = get().items[localId]
-    item?.ctrl?.abort()
-    set((s) =>
-      s.items[localId]
-        ? { items: { ...s.items, [localId]: { ...s.items[localId], status: 'paused', ctrl: undefined } } }
-        : s,
-    )
-  },
+    async remove(localId) {
+      const item = get().items[localId]
+      item?.ctrl?.abort()
+      if (item?.uploadId && item.status !== 'done') {
+        try { await uploadsApi.abort(item.uploadId) } catch { /* ignore */ }
+        try { await uploadsIDB.remove(item.uploadId) } catch { /* ignore */ }
+      }
+      set((s) => {
+        const { [localId]: _, ...rest } = s.items
+        return { items: rest }
+      })
+      scheduleNext()
+    },
 
-  async resume(localId) {
-    const item = get().items[localId]
-    if (!item || !item.file || !item.uploadId) return
-    // refresh server-side parts
-    const info = await uploadsApi.info(item.uploadId)
-    set((s) => ({
-      items: {
-        ...s.items,
-        [localId]: {
-          ...s.items[localId],
-          uploadedParts: info.parts.length,
-          bytesUploaded: info.parts.reduce((a, p) => a + p.size, 0),
-          status: 'uploading',
-        },
-      },
-    }))
-    await runUploadLoop(localId, set, get)
-  },
-
-  async remove(localId) {
-    const item = get().items[localId]
-    item?.ctrl?.abort()
-    if (item?.uploadId && item.status !== 'done') {
-      try { await uploadsApi.abort(item.uploadId) } catch { /* ignore */ }
-      try { await uploadsIDB.remove(item.uploadId) } catch { /* ignore */ }
-    }
-    set((s) => {
-      const { [localId]: _, ...rest } = s.items
-      return { items: rest }
-    })
-  },
-
-  attachFile(localId, file) {
-    set((s) =>
-      s.items[localId]
-        ? { items: { ...s.items, [localId]: { ...s.items[localId], file } } }
-        : s,
-    )
-  },
-}))
+    attachFile(localId, file) {
+      set((s) =>
+        s.items[localId]
+          ? { items: { ...s.items, [localId]: { ...s.items[localId], file } } }
+          : s,
+      )
+    },
+  }
+})
 
 async function runUploadLoop(
   localId: string,

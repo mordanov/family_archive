@@ -24,6 +24,8 @@ export function UploadQueue() {
     }
   }, [items, qc])
 
+  const queuedCount = useMemo(() => items.filter((i) => i.status === 'queued').length, [items])
+
   if (!items.length) return null
 
   return (
@@ -32,7 +34,15 @@ export function UploadQueue() {
         className="flex w-full items-center justify-between border-b border-surface-strong px-3 py-2 text-sm font-semibold"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="flex items-center gap-2"><UpIcon size={16} /> {t('upload.uploading_count', { count: items.length })}</span>
+        <span className="flex items-center gap-2">
+          <UpIcon size={16} />
+          {t('upload.uploading_count', { count: items.length })}
+          {queuedCount > 0 && (
+            <span className="rounded bg-surface-muted px-1.5 py-0.5 text-xs text-ink-muted">
+              {t('upload.queued_count', { count: queuedCount })}
+            </span>
+          )}
+        </span>
         {open ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
       </button>
       {open && (
@@ -61,9 +71,11 @@ export function UploadQueue() {
                         <Play size={14} />
                       </button>
                     )}
-                    <button onClick={() => remove(u.localId)} className="rounded p-1 hover:bg-surface-muted" title={t('common.cancel')}>
-                      <X size={14} />
-                    </button>
+                    {u.status !== 'done' && (
+                      <button onClick={() => remove(u.localId)} className="rounded p-1 hover:bg-surface-muted" title={t('common.cancel')}>
+                        <X size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="mt-1 h-1 w-full overflow-hidden rounded bg-surface-muted">
