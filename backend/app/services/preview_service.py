@@ -1,6 +1,7 @@
 """Preview generation: thumbnails (image), poster (video), audio meta."""
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from app.core.config import settings
@@ -21,7 +22,8 @@ QUEUE = None  # asyncio.Queue, assigned at startup
 async def generate_for_new_file(file: File) -> None:
     """Decide inline vs background generation."""
     if file.size_bytes <= settings.INLINE_THUMBNAIL_MAX_BYTES:
-        await _generate_inline(file.id)
+        # Fire-and-forget: don't hold the caller's DB connection while generating.
+        asyncio.create_task(_generate_inline(file.id))
     else:
         if QUEUE is not None:
             await QUEUE.put(file.id)
@@ -36,19 +38,29 @@ async def _generate_inline(file_id: int) -> None:
 
 async def generate(file_id: int) -> None:
     """Top-level entry. Loads file, dispatches by content type."""
+    # Phase 1: fetch — acquire and immediately release the DB connection.
     async with AsyncSessionLocal() as db:
         f = await files_repo.get(db, file_id, include_deleted=True)
-        ct = (f.content_type or "").lower()
-        try:
-            if ct.startswith("image/"):
-                await _do_image(db, f)
-            elif ct.startswith("video/"):
-                await _do_video(db, f)
-            elif ct.startswith("audio/"):
-                await _do_audio(db, f)
-        except Exception as e:
-            log.exception("preview gen failed for %s: %s", f.id, e)
-        await db.commit()
+
+    # Phase 2: S3 I/O + media processing — no DB connection held.
+    ct = (f.content_type or "").lower()
+    update_kwargs: dict = {}
+    try:
+        if ct.startswith("image/"):
+            update_kwargs = await _do_image(f)
+        elif ct.startswith("video/"):
+            update_kwargs = await _do_video(f)
+        elif ct.startswith("audio/"):
+            update_kwargs = await _do_audio(f)
+    except Exception as e:
+        log.exception("preview gen failed for %s: %s", f.id, e)
+        return
+
+    # Phase 3: write result — acquire and immediately release the DB connection.
+    if update_kwargs:
+        async with AsyncSessionLocal() as db:
+            await files_repo.mark_thumbnail(db, f.id, **update_kwargs)
+            await db.commit()
 
 
 async def _read_object(key: str) -> bytes:
@@ -59,7 +71,7 @@ async def _read_object(key: str) -> bytes:
     return b"".join(chunks)
 
 
-async def _do_image(db, f: File) -> None:
+async def _do_image(f: File) -> dict:
     data = await _read_object(f.s3_key)
     for size in THUMB_SIZES:
         try:
@@ -69,22 +81,20 @@ async def _do_image(db, f: File) -> None:
             )
         except Exception as e:
             log.warning("thumb %s failed for %s: %s", size, f.id, e)
-            return
-    await files_repo.mark_thumbnail(db, f.id, has_thumb=True)
+            return {}
+    return {"has_thumb": True}
 
 
-async def _do_video(db, f: File) -> None:
-    # For very large videos we'd want streaming-aware ffmpeg; v1 reads whole object.
+async def _do_video(f: File) -> dict:
     data = await _read_object(f.s3_key)
     poster = await make_poster_from_bytes(data)
     if not poster:
-        return
+        return {}
     await object_store.put_object(f"posters/{f.uuid}.jpg", poster, "image/jpeg")
-    await files_repo.mark_thumbnail(db, f.id, has_poster=True)
+    return {"has_poster": True}
 
 
-async def _do_audio(db, f: File) -> None:
+async def _do_audio(f: File) -> dict:
     data = await _read_object(f.s3_key)
     meta = audio_meta_extract(data)
-    await files_repo.mark_thumbnail(db, f.id, audio_meta=meta or None)
-
+    return {"audio_meta": meta or None}
