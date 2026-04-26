@@ -37,12 +37,13 @@ export async function api<T = unknown>(path: string, init: Init = {}): Promise<T
 
   const r = await fetch(BASE + path, { ...init, headers, body, credentials: 'include' })
   if (!r.ok) {
+    const text = await r.text()
     let errBody: ApiError | string
     try {
-      const j = await r.json()
+      const j = JSON.parse(text)
       errBody = j.detail ?? j
     } catch {
-      errBody = await r.text()
+      errBody = text
     }
     throw new HttpError(r.status, errBody)
   }
