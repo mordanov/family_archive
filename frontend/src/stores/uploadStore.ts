@@ -63,6 +63,10 @@ export const useUploads = create<UploadStore>((set, get) => {
     items: {},
 
     add(file, folderId) {
+      const already = Object.values(get().items).some(
+        (i) => i.folderId === folderId && i.filename === file.name,
+      )
+      if (already) return
       const localId = newId()
       set((s) => ({
         items: {
