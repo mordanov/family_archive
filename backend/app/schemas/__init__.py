@@ -85,6 +85,10 @@ class FolderListing(BaseModel):
     next_cursor: str | None = None
 
 
+class ThumbnailPrewarmIn(BaseModel):
+    file_ids: list[int] = Field(default_factory=list, min_length=1, max_length=64)
+
+
 # ---------- uploads ----------
 class UploadCreate(BaseModel):
     folder_id: int

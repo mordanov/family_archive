@@ -14,6 +14,8 @@ export const filesApi = {
   thumbnailUrl: (id: number, size: 256 | 1024 = 256) =>
     `${apiBase}/files/${id}/thumbnail?size=${size}`,
   posterUrl: (id: number) => `${apiBase}/files/${id}/poster`,
+  prewarmThumbnails: (file_ids: number[]) =>
+    api<{ queued: number }>(`/files/thumbnails/prewarm`, { method: 'POST', json: { file_ids } }),
 
   audioMeta: (id: number) => api<Record<string, unknown>>(`/files/${id}/audio-meta`),
 

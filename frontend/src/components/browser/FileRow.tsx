@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Folder as FolderIcon, FileIcon, Image as ImgIcon, Video, Music, FileArchive, Pencil, Share2, Trash2 } from 'lucide-react'
@@ -29,9 +30,10 @@ interface RowProps {
   viewMode: 'list' | 'grid'
   showFileCheckbox?: boolean
   showFolderCheckbox?: boolean
+  onVisibleFile?: (file: FileItem) => void
 }
 
-export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, showFolderCheckbox = false }: RowProps) {
+export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, showFolderCheckbox = false, onVisibleFile }: RowProps) {
   const { t } = useTranslation()
   const nav = useNavigate()
   const qc = useQueryClient()
@@ -56,13 +58,44 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
   }
 
   const isGrid = viewMode === 'grid'
+  const [thumbFailed, setThumbFailed] = useState(false)
   const actionSlotClass = isGrid
     ? 'mt-2 flex w-full items-center justify-end gap-1'
     : 'ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100'
   const showCheckbox = isFolder ? showFolderCheckbox : showFileCheckbox
+  const file = isFolder ? null : (item as FileItem)
+  const fileKind = file ? classifyMime(file.content_type, file.name) : 'other'
+  const rowRef = useRef<HTMLDivElement | null>(null)
+  const notifiedVisibleRef = useRef(false)
+  const canShowThumbnail = Boolean(isGrid && file && (fileKind === 'image' || fileKind === 'video') && !thumbFailed)
+
+  useEffect(() => {
+    if (!onVisibleFile || !isGrid || !file || (fileKind !== 'image' && fileKind !== 'video')) {
+      return
+    }
+    if (!rowRef.current || notifiedVisibleRef.current) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting)
+        if (visible && !notifiedVisibleRef.current) {
+          notifiedVisibleRef.current = true
+          onVisibleFile(file)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '200px 0px' },
+    )
+    observer.observe(rowRef.current)
+
+    return () => observer.disconnect()
+  }, [file, fileKind, isGrid, onVisibleFile])
 
   return (
     <div
+      ref={rowRef}
       tabIndex={0}
       onDoubleClick={onDoubleClick}
       className={`group outline-none hover:bg-surface ${isSelected ? 'bg-accent/10' : ''} ${
@@ -71,11 +104,8 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
           : 'flex items-center gap-3 border-b border-surface-strong px-3 py-2'
       }`}
     >
-      <div
-        className={`flex h-6 w-6 items-center justify-center ${isGrid ? 'mb-2' : 'shrink-0'}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {showCheckbox ? (
+      <div className={`flex h-6 w-6 items-center justify-center ${isGrid ? 'mb-2' : 'shrink-0'}`} onClick={(e) => e.stopPropagation()}>
+        {showCheckbox && (
           <input
             type="checkbox"
             checked={isSelected}
@@ -85,10 +115,22 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
             }}
             aria-label={t('file.select')}
           />
+        )}
+      </div>
+
+      <div className={`overflow-hidden rounded bg-surface-muted ${isGrid ? 'mb-2 h-28 w-full' : 'h-9 w-9 shrink-0'}`}>
+        {canShowThumbnail ? (
+          <img
+            src={filesApi.thumbnailUrl(file!.id, 256)}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            onError={() => setThumbFailed(true)}
+          />
+        ) : isFolder ? (
+          <div className="flex h-full w-full items-center justify-center"><FolderIcon size={20} className="text-ink-muted" /></div>
         ) : (
-          isFolder
-            ? <FolderIcon size={18} className="shrink-0 text-ink-muted" />
-            : kindIcon(item as FileItem)
+          <div className="flex h-full w-full items-center justify-center">{kindIcon(file!)}</div>
         )}
       </div>
 

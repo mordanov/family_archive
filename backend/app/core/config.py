@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     CHUNK_SIZE_BYTES: int = 8 * 1024 * 1024              # 8 MB
     TRASH_RETENTION_DAYS: int = 30
     INLINE_THUMBNAIL_MAX_BYTES: int = 50 * 1024 * 1024
+    THUMBNAIL_DIR: str = "/app/data/thumbnails"
+    THUMBNAIL_MAX_SIDE: int = 256
+    PREWARM_THUMBNAIL_CONCURRENCY: int = 4
     MULTIPART_GC_AFTER_HOURS: int = 24
     MAX_FOLDER_DEPTH: int = 32
     MAX_LOGIN_ATTEMPTS_PER_15MIN: int = 5

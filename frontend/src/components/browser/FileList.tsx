@@ -1,16 +1,59 @@
+import { useCallback, useEffect, useRef } from 'react'
 import { useFolderChildren } from '@/hooks/useFolderTree'
 import { useTranslation } from 'react-i18next'
 import { Row } from './FileRow'
 import { Loader2, FolderOpen } from 'lucide-react'
 import { mapErrorToI18n } from '@/i18n/errors'
+import { filesApi } from '@/api/files'
 import { useUI } from '@/stores/uiStore'
 import { useSelection } from '@/stores/selectionStore'
+import type { FileItem } from '@/types/api'
+import { classifyMime } from '@/lib/mime'
 
 export function FileList({ folderId }: { folderId: number }) {
   const { t } = useTranslation()
   const viewMode = useUI((s) => s.viewMode)
   const selection = useSelection()
   const { data, isLoading, isError, error } = useFolderChildren(folderId)
+  const queuedIdsRef = useRef<Set<number>>(new Set())
+  const sentIdsRef = useRef<Set<number>>(new Set())
+  const timerRef = useRef<number | null>(null)
+
+  const flushPrewarm = useCallback(() => {
+    if (timerRef.current !== null) return
+    timerRef.current = window.setTimeout(async () => {
+      timerRef.current = null
+      const ids = Array.from(queuedIdsRef.current).filter((id) => !sentIdsRef.current.has(id)).slice(0, 24)
+      ids.forEach((id) => queuedIdsRef.current.delete(id))
+      if (!ids.length) return
+      ids.forEach((id) => sentIdsRef.current.add(id))
+      try {
+        await filesApi.prewarmThumbnails(ids)
+      } catch {
+        ids.forEach((id) => sentIdsRef.current.delete(id))
+      }
+      if (queuedIdsRef.current.size) flushPrewarm()
+    }, 150)
+  }, [])
+
+  const handleVisibleFile = useCallback((file: FileItem) => {
+    if (viewMode !== 'grid') return
+    const kind = classifyMime(file.content_type, file.name)
+    if (kind !== 'image' && kind !== 'video') return
+    if (sentIdsRef.current.has(file.id)) return
+    queuedIdsRef.current.add(file.id)
+    flushPrewarm()
+  }, [flushPrewarm, viewMode])
+
+  useEffect(() => {
+    if (viewMode !== 'grid') return
+    return () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+    }
+  }, [viewMode])
   if (isLoading)
     return (
       <div className="flex items-center justify-center p-12 text-ink-muted">
@@ -53,7 +96,7 @@ export function FileList({ folderId }: { folderId: number }) {
           <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} showFolderCheckbox />
         ))}
         {data!.files.map((f) => (
-          <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} showFileCheckbox />
+          <Row key={`F${f.id}`} kind="file" item={f} parentId={folderId} viewMode={viewMode} showFileCheckbox onVisibleFile={handleVisibleFile} />
         ))}
       </div>
     </div>

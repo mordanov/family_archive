@@ -9,6 +9,7 @@ from app.repositories import audit as audit_repo
 from app.repositories import files as files_repo
 from app.repositories import folders as folders_repo
 from app.storage.object_store import object_store
+from app.storage.thumbnail_store import thumbnail_store
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ async def purge_due(db: AsyncSession) -> int:
     for f in files:
         try:
             await object_store.delete_object(f.s3_key)
+            await thumbnail_store.delete_for(f.uuid)
             await object_store.delete_prefix(f"thumbnails/{f.uuid}/")
             await object_store.delete_object(f"posters/{f.uuid}.jpg")
             await files_repo.hard_delete(db, f)
