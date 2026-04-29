@@ -28,6 +28,7 @@ ENV/
 *.swo
 .DS_Store
 Thumbs.db
+.serena
 
 # Testing & coverage
 .pytest_cache/
