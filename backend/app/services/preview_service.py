@@ -17,35 +17,36 @@ from app.storage.thumbnail_store import thumbnail_store
 log = logging.getLogger(__name__)
 
 # In-process queue (set up by workers.manager)
-QUEUE = None  # asyncio.Queue, assigned at startup
+QUEUE: asyncio.Queue[int] | None = None  # assigned at startup
 
-_PREWARM_SEMAPHORE: asyncio.Semaphore | None = None
-_PREWARM_IN_FLIGHT: set[int] = set()
-_PREWARM_LOCK = asyncio.Lock()
+_IN_FLIGHT: set[int] = set()
+_IN_FLIGHT_LOCK: asyncio.Lock = asyncio.Lock()
 
 
-def _prewarm_semaphore() -> asyncio.Semaphore:
-    global _PREWARM_SEMAPHORE
-    if _PREWARM_SEMAPHORE is None:
-        _PREWARM_SEMAPHORE = asyncio.Semaphore(max(1, settings.PREWARM_THUMBNAIL_CONCURRENCY))
-    return _PREWARM_SEMAPHORE
+async def _enqueue(file_id: int, *, nowait: bool = False) -> bool:
+    async with _IN_FLIGHT_LOCK:
+        if file_id in _IN_FLIGHT:
+            return True  # already queued or processing
+        if QUEUE is None:
+            return False
+        try:
+            if nowait:
+                QUEUE.put_nowait(file_id)
+            else:
+                await QUEUE.put(file_id)
+        except asyncio.QueueFull:
+            return False
+        _IN_FLIGHT.add(file_id)
+    return True
+
+
+async def release_job(file_id: int) -> None:
+    async with _IN_FLIGHT_LOCK:
+        _IN_FLIGHT.discard(file_id)
 
 
 async def generate_for_new_file(file: File) -> None:
-    """Decide inline vs background generation."""
-    if file.size_bytes <= settings.INLINE_THUMBNAIL_MAX_BYTES:
-        # Fire-and-forget: don't hold the caller's DB connection while generating.
-        asyncio.create_task(_generate_inline(file.id))
-    else:
-        if QUEUE is not None:
-            await QUEUE.put(file.id)
-
-
-async def _generate_inline(file_id: int) -> None:
-    try:
-        await generate(file_id)
-    except Exception as e:
-        log.warning("inline preview generation failed for file %s: %s", file_id, e)
+    await _enqueue(file.id)
 
 
 async def generate(file_id: int) -> None:
@@ -84,7 +85,7 @@ async def _read_object(key: str) -> bytes:
 
 
 async def ensure_thumbnail(file_id: int) -> bool:
-    """Generate local thumbnail on demand for image/video files."""
+    """On-demand thumbnail via UI. Queues generation; returns False if queue full."""
     async with AsyncSessionLocal() as db:
         f = await files_repo.get(db, file_id)
 
@@ -99,44 +100,16 @@ async def ensure_thumbnail(file_id: int) -> bool:
                 await db.commit()
         return True
 
-    try:
-        if ct.startswith("image/"):
-            update_kwargs = await _do_image(f)
-        else:
-            update_kwargs = await _do_video(f, include_poster=False)
-    except Exception as e:
-        log.warning("on-demand thumbnail generation failed for file %s: %s", f.id, e)
-        return False
-
-    if update_kwargs.get("has_thumb"):
-        async with AsyncSessionLocal() as db:
-            await files_repo.mark_thumbnail(db, f.id, has_thumb=True)
-            await db.commit()
-        return True
-    return False
+    return await _enqueue(file_id, nowait=True)
 
 
 async def prewarm_thumbnails(file_ids: list[int]) -> int:
-    """Schedule non-blocking thumbnail generation for provided file IDs."""
+    """Schedule thumbnail generation for provided file IDs."""
     queued = 0
     for file_id in dict.fromkeys(file_ids):
-        async with _PREWARM_LOCK:
-            if file_id in _PREWARM_IN_FLIGHT:
-                continue
-            _PREWARM_IN_FLIGHT.add(file_id)
-        asyncio.create_task(_run_prewarm_job(file_id))
-        queued += 1
+        if await _enqueue(file_id, nowait=True):
+            queued += 1
     return queued
-
-
-async def _run_prewarm_job(file_id: int) -> None:
-    sem = _prewarm_semaphore()
-    try:
-        async with sem:
-            await _generate_inline(file_id)
-    finally:
-        async with _PREWARM_LOCK:
-            _PREWARM_IN_FLIGHT.discard(file_id)
 
 
 async def _do_image(f: File) -> dict:

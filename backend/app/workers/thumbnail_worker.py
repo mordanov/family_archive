@@ -18,4 +18,6 @@ async def thumbnail_worker_loop(queue: asyncio.Queue[int]) -> None:
             await preview_service.generate(file_id)
         except Exception as e:
             log.exception("thumbnail worker failure for %s: %s", file_id, e)
+        finally:
+            await preview_service.release_job(file_id)
 
