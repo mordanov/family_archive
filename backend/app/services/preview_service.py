@@ -84,10 +84,12 @@ async def _read_object(key: str) -> bytes:
     return b"".join(chunks)
 
 
-async def ensure_thumbnail(file_id: int) -> bool:
+async def ensure_thumbnail(file_id: int, *, file: File | None = None) -> bool:
     """On-demand thumbnail via UI. Queues generation; returns False if queue full."""
-    async with AsyncSessionLocal() as db:
-        f = await files_repo.get(db, file_id)
+    if file is None:
+        async with AsyncSessionLocal() as db:
+            file = await files_repo.get(db, file_id)
+    f = file
 
     ct = (f.content_type or "").lower()
     if not (ct.startswith("image/") or ct.startswith("video/")):

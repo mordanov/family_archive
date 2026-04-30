@@ -29,7 +29,7 @@ async def thumbnail(file_id: int, user: CurrentUser, size: int = Query(256)):
 
     path = thumbnail_store.path_for(f.uuid, size)
     if not path.exists():
-        ok = await preview_service.ensure_thumbnail(file_id)
+        ok = await preview_service.ensure_thumbnail(file_id, file=f)
         if not ok or not path.exists():
             raise NotFound("Thumbnail not available")
 
