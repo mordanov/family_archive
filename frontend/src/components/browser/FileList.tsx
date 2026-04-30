@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useFolderChildren } from '@/hooks/useFolderTree'
 import { useTranslation } from 'react-i18next'
 import { Row } from './FileRow'
@@ -14,6 +15,7 @@ export function FileList({ folderId }: { folderId: number }) {
   const { t } = useTranslation()
   const viewMode = useUI((s) => s.viewMode)
   const selection = useSelection()
+  const qc = useQueryClient()
   const { data, isLoading, isError, error } = useFolderChildren(folderId)
   const queuedIdsRef = useRef<Set<number>>(new Set())
   const sentIdsRef = useRef<Set<number>>(new Set())
@@ -29,12 +31,16 @@ export function FileList({ folderId }: { folderId: number }) {
       ids.forEach((id) => sentIdsRef.current.add(id))
       try {
         await filesApi.prewarmThumbnails(ids)
+        window.setTimeout(
+          () => qc.invalidateQueries({ queryKey: ['folder-children', folderId] }),
+          5000,
+        )
       } catch {
         ids.forEach((id) => sentIdsRef.current.delete(id))
       }
       if (queuedIdsRef.current.size) flushPrewarm()
     }, 150)
-  }, [])
+  }, [qc, folderId])
 
   const handleVisibleFile = useCallback((file: FileItem) => {
     if (viewMode !== 'grid') return
