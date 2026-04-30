@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Upload } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useUploads } from '@/stores/uploadStore'
+import { collectDroppedFiles } from '@/lib/folderDrop'
 
 interface Props { folderId: number; children: React.ReactNode }
 
@@ -9,6 +11,8 @@ export function DropZone({ folderId, children }: Props) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
   const add = useUploads((s) => s.add)
+  const qc = useQueryClient()
+
   return (
     <div
       onDragEnter={(e) => { e.preventDefault(); setOver(true) }}
@@ -17,8 +21,17 @@ export function DropZone({ folderId, children }: Props) {
       onDrop={(e) => {
         e.preventDefault()
         setOver(false)
-        const files = Array.from(e.dataTransfer.files)
-        files.forEach((f) => add(f, folderId))
+        // Capture flat file list synchronously as fallback for browsers without
+        // Entry API support (webkitGetAsEntry returns null for all items).
+        const flatFiles = Array.from(e.dataTransfer.files)
+        collectDroppedFiles(e.dataTransfer.items, folderId).then((collected) => {
+          if (collected.length > 0) {
+            collected.forEach(({ file, folderId: targetId }) => add(file, targetId))
+            qc.invalidateQueries({ queryKey: ['folder-children', folderId] })
+          } else {
+            flatFiles.forEach((f) => add(f, folderId))
+          }
+        })
       }}
       className="relative h-full"
     >
@@ -52,4 +65,3 @@ export function UploadButton({ folderId }: { folderId: number }) {
     </label>
   )
 }
-
