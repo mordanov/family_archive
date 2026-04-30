@@ -4,6 +4,7 @@ import type { FileItem } from '@/types/api'
 export function VideoPreview({ file }: { file: FileItem }) {
   return (
     <video
+      key={file.id}
       src={filesApi.rawUrl(file.id)}
       poster={file.has_poster ? filesApi.posterUrl(file.id) : undefined}
       controls

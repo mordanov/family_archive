@@ -2,18 +2,21 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, require_csrf
 from app.db.session import get_db
+from app.media.image_rotate import rotate_image_90cw
 from app.repositories import audit as audit_repo
 from app.repositories import files as files_repo
 from app.repositories import folders as folders_repo
 from app.repositories import tags as tags_repo
 from app.schemas import FileOut, FilePatch
+from app.services import preview_service
 from app.storage.object_store import object_store
+from app.storage.thumbnail_store import thumbnail_store
 from app.utils.filenames import sanitize_name
 from app.utils.range_header import parse_range
 
@@ -48,6 +51,37 @@ async def delete_file(file_id: int, request: Request, user: CurrentUser, db: Asy
     await files_repo.soft_delete(db, f)
     await audit_repo.log(db, user_id=user.id, action="delete", entity_type="file", entity_id=f.id, ip=_ip(request))
     return None
+
+
+async def _read_s3_file(key: str) -> bytes:
+    iterator, _ = await object_store.get_object_stream(key)
+    chunks: list[bytes] = []
+    async for chunk in iterator:
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+@router.post("/{file_id}/rotate", response_model=FileOut, dependencies=[Depends(require_csrf)])
+async def rotate_file(file_id: int, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    f = await files_repo.get(db, file_id)
+    ct = (f.content_type or "").lower()
+    if not ct.startswith("image/"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Only images can be rotated")
+
+    data = await _read_s3_file(f.s3_key)
+    rotated = await rotate_image_90cw(data)
+
+    await object_store.put_object(f.s3_key, rotated, f.content_type)
+    await thumbnail_store.delete_for(f.uuid)
+
+    f.size_bytes = len(rotated)
+    f.has_thumbnail = False
+    await audit_repo.log(db, user_id=user.id, action="rotate", entity_type="file", entity_id=f.id, ip=_ip(request))
+    await db.commit()
+    await db.refresh(f)
+
+    await preview_service.generate_for_new_file(f)
+    return f
 
 
 async def _stream_file_response(file_id: int, db: AsyncSession, range_header: str | None, attachment: bool):

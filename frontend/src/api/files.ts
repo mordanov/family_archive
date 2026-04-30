@@ -1,5 +1,5 @@
 import { api, apiBase } from './client'
-import type { FileItem, ZipEntry } from '@/types/api'
+import type { FileItem, FileMeta, ZipEntry } from '@/types/api'
 
 export const filesApi = {
   get: (id: number) => api<FileItem>(`/files/${id}`),
@@ -18,6 +18,8 @@ export const filesApi = {
     api<{ queued: number }>(`/files/thumbnails/prewarm`, { method: 'POST', json: { file_ids } }),
 
   audioMeta: (id: number) => api<Record<string, unknown>>(`/files/${id}/audio-meta`),
+  rotate: (id: number) => api<FileItem>(`/files/${id}/rotate`, { method: 'POST' }),
+  meta: (id: number) => api<FileMeta>(`/files/${id}/meta`),
 
   zipEntries: (id: number) => api<ZipEntry[]>(`/files/${id}/zip/entries`),
   zipEntryUrl: (id: number, path: string) =>

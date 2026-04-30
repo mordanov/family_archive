@@ -85,5 +85,34 @@ export interface AuditEntry {
   created_at: string
 }
 
+export interface FileMeta {
+  size_bytes?: number
+  name?: string
+  content_type?: string
+  // image geometry
+  width?: number
+  height?: number
+  format?: string
+  // EXIF camera
+  Make?: string
+  Model?: string
+  DateTimeOriginal?: string
+  ExposureTime?: number
+  FNumber?: number
+  ISOSpeedRatings?: number
+  FocalLength?: number
+  GPSLatitude?: number
+  GPSLongitude?: number
+  // video
+  duration?: number
+  bit_rate?: number
+  video_codec?: string
+  audio_codec?: string
+  audio_channels?: number
+  audio_sample_rate?: string
+  fps?: number
+  [key: string]: string | number | undefined
+}
+
 export interface ApiError { code: string; message: string }
 
