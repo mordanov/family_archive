@@ -7,6 +7,9 @@ interface UIState {
   viewMode: ViewMode
   setViewMode: (m: ViewMode) => void
 
+  expandedFolderIds: Set<number>
+  toggleFolderExpanded: (id: number) => void
+
   // Active modals/dialogs
   previewFileId: number | null
   setPreviewFileId: (id: number | null) => void
@@ -35,12 +38,40 @@ function persistViewMode(mode: ViewMode): void {
   }
 }
 
+function readExpandedFolderIds(): Set<number> {
+  try {
+    const raw = localStorage.getItem('archive.treeExpanded')
+    if (!raw) return new Set([1])
+    const parsed = JSON.parse(raw)
+    return new Set(Array.isArray(parsed) ? parsed.map(Number) : [1])
+  } catch {
+    return new Set([1])
+  }
+}
+
+function persistExpandedFolderIds(ids: Set<number>): void {
+  try {
+    localStorage.setItem('archive.treeExpanded', JSON.stringify([...ids]))
+  } catch { /* non-fatal */ }
+}
+
 export const useUI = create<UIState>((set) => ({
   viewMode: readInitialViewMode(),
   setViewMode: (m) => {
     persistViewMode(m)
     set({ viewMode: m })
   },
+
+  expandedFolderIds: readExpandedFolderIds(),
+  toggleFolderExpanded: (id) =>
+    set((s) => {
+      const next = new Set(s.expandedFolderIds)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      persistExpandedFolderIds(next)
+      return { expandedFolderIds: next }
+    }),
+
   previewFileId: null,
   setPreviewFileId: (id) => set({ previewFileId: id }),
   newFolderOpen: false,

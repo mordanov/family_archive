@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { foldersApi } from '@/api/folders'
 
-export function useFolderChildren(folderId: number) {
+export function useFolderChildren(folderId: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['folder-children', folderId],
     queryFn: () => foldersApi.children(folderId),
     staleTime: 30_000,
+    enabled: options?.enabled !== false,
   })
 }
 
