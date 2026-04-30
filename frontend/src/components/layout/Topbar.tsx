@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { LogOut, User as UserIcon, Trash2 } from 'lucide-react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { useUI } from '@/stores/uiStore'
@@ -9,12 +9,16 @@ import { LanguageSwitcher } from './LanguageSwitcher'
 export function Topbar() {
   const { t } = useTranslation()
   const nav = useNavigate()
+  const qc = useQueryClient()
   const view = useUI((s) => s.viewMode)
   const setView = useUI((s) => s.setViewMode)
   const me = useQuery({ queryKey: ['me'], queryFn: authApi.me, retry: false })
   const logout = useMutation({
     mutationFn: authApi.logout,
-    onSuccess: () => nav('/login', { replace: true }),
+    onSuccess: () => {
+      qc.clear()
+      nav('/login', { replace: true })
+    },
   })
   return (
     <header className="flex h-12 items-center justify-between border-b border-surface-strong bg-surface px-4">

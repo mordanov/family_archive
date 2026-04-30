@@ -14,7 +14,7 @@ export function ImagePreview({ file, zoom }: Props) {
     >
       <img
         key={file.id}
-        src={filesApi.rawUrl(file.id)}
+        src={`${filesApi.rawUrl(file.id)}?v=${new Date(file.updated_at).getTime()}`}
         alt={file.name}
         style={
           isZoomed
