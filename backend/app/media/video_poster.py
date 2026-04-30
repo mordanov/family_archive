@@ -1,4 +1,4 @@
-"""Generate a poster JPG from a video by invoking ffmpeg as a subprocess."""
+"""Generate a poster JPG from a video by invoking ffmpeg with a presigned URL input."""
 from __future__ import annotations
 
 import asyncio
@@ -9,16 +9,20 @@ import tempfile
 log = logging.getLogger(__name__)
 
 
-async def make_poster_from_bytes(video_bytes: bytes, max_side: int = 1024) -> bytes | None:
-    """Write video to a tmp file and ask ffmpeg for a single frame."""
-    with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as tf:
-        tf.write(video_bytes)
-        in_path = tf.name
-    out_path = in_path + ".jpg"
+async def make_poster_from_url(url: str, max_side: int = 1024) -> bytes | None:
+    """Extract a single frame from a video URL without downloading the full file.
+
+    Uses ffmpeg's HTTP client with input-seeking so only a small portion of the
+    video is fetched over the network (ffmpeg issues range requests as needed).
+    """
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
+        out_path = tf.name
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ffmpeg", "-y", "-i", in_path,
-            "-vf", f"thumbnail,scale='min({max_side},iw)':-1",
+            "ffmpeg", "-y",
+            "-ss", "1",                               # fast input-seek; avoids black intro frames
+            "-i", url,
+            "-vf", f"scale='min({max_side},iw)':-1",  # resize, preserve aspect ratio
             "-frames:v", "1",
             "-q:v", "4",
             out_path,
@@ -31,9 +35,7 @@ async def make_poster_from_bytes(video_bytes: bytes, max_side: int = 1024) -> by
         with open(out_path, "rb") as f:
             return f.read()
     finally:
-        for p in (in_path, out_path):
-            try:
-                os.unlink(p)
-            except FileNotFoundError:
-                pass
-
+        try:
+            os.unlink(out_path)
+        except FileNotFoundError:
+            pass

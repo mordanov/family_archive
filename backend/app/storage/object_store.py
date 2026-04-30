@@ -104,6 +104,15 @@ class ObjectStore:
             finally:
                 r["Body"].close()
 
+    async def presign_get_url(self, key: str, expires_in: int = 300) -> str:
+        """Return a presigned GET URL for the object (client-side computation, no network call)."""
+        async with s3_client() as c:
+            return await c.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": key},
+                ExpiresIn=expires_in,
+            )
+
     async def delete_object(self, key: str) -> None:
         async with s3_client() as c:
             try:

@@ -15,6 +15,6 @@ def make_thumbnail(image_bytes: bytes, max_side: int) -> bytes:
         if im.mode not in ("RGB", "RGBA"):
             im = im.convert("RGB")
         out = io.BytesIO()
-        im.save(out, format="WEBP", quality=82, method=4)
+        im.save(out, format="WEBP", quality=82, method=2)
         return out.getvalue()
 

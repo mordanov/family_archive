@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.media.audio_meta import extract_meta as audio_meta_extract
 from app.media.image_thumbs import make_thumbnail
-from app.media.video_poster import make_poster_from_bytes
+from app.media.video_poster import make_poster_from_url
 from app.models import File
 from app.repositories import files as files_repo
 from app.storage.object_store import object_store
@@ -117,7 +117,7 @@ async def prewarm_thumbnails(file_ids: list[int]) -> int:
 async def _do_image(f: File) -> dict:
     data = await _read_object(f.s3_key)
     try:
-        thumb = make_thumbnail(data, settings.THUMBNAIL_MAX_SIDE)
+        thumb = await asyncio.to_thread(make_thumbnail, data, settings.THUMBNAIL_MAX_SIDE)
         await thumbnail_store.write_thumbnail(f.uuid, thumb, settings.THUMBNAIL_MAX_SIDE)
     except Exception as e:
         log.warning("thumbnail generation failed for image %s: %s", f.id, e)
@@ -126,13 +126,13 @@ async def _do_image(f: File) -> dict:
 
 
 async def _do_video(f: File, *, include_poster: bool) -> dict:
-    data = await _read_object(f.s3_key)
     poster_max_side = 1024 if include_poster else settings.THUMBNAIL_MAX_SIDE
-    poster = await make_poster_from_bytes(data, max_side=poster_max_side)
+    url = await object_store.presign_get_url(f.s3_key, expires_in=300)
+    poster = await make_poster_from_url(url, max_side=poster_max_side)
     if not poster:
         return {}
     try:
-        thumb = make_thumbnail(poster, settings.THUMBNAIL_MAX_SIDE)
+        thumb = await asyncio.to_thread(make_thumbnail, poster, settings.THUMBNAIL_MAX_SIDE)
         await thumbnail_store.write_thumbnail(f.uuid, thumb, settings.THUMBNAIL_MAX_SIDE)
     except Exception as e:
         log.warning("thumbnail generation failed for video %s: %s", f.id, e)
