@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     THUMBNAIL_DIR: str = "/app/data/thumbnails"
     THUMBNAIL_MAX_SIDE: int = 256
     THUMBNAIL_WORKER_COUNT: int = 2
+    DB_POOL_SIZE: int = 20
+    DB_POOL_OVERFLOW: int = 20
     MULTIPART_GC_AFTER_HOURS: int = 24
     MAX_FOLDER_DEPTH: int = 32
     MAX_LOGIN_ATTEMPTS_PER_15MIN: int = 5
