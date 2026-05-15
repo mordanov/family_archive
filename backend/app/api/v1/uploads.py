@@ -43,7 +43,7 @@ def _to_out(up) -> UploadOut:
 async def init(payload: UploadCreate, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
     up = await upload_service.init_upload(
         db,
-        user_id=user.id,
+        user_id=user.sub,  # TODO(data-migration): sub is UUID; DB upload/audit expects integer user_id
         folder_id=payload.folder_id,
         filename=payload.filename,
         size_bytes=payload.size_bytes,
@@ -71,19 +71,19 @@ async def upload_part(
     if len(body) > settings.CHUNK_SIZE_BYTES + 1024:
         raise TooLarge("Chunk too large")
     etag = await upload_service.receive_part(
-        db, upload_id=upload_id, user_id=user.id, part_number=part_number, body=body
+        db, upload_id=upload_id, user_id=user.sub,  # TODO(data-migration): sub is UUID; DB upload/audit expects integer user_id part_number=part_number, body=body
     )
     return {"part_number": part_number, "size": len(body), "etag": etag}
 
 
 @router.post("/{upload_id}/complete", response_model=UploadCompleteOut, dependencies=[Depends(require_csrf)])
 async def complete(upload_id: uuid_lib.UUID, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
-    file = await upload_service.complete_upload(db, upload_id=upload_id, user_id=user.id, ip=_ip(request))
+    file = await upload_service.complete_upload(db, upload_id=upload_id, user_id=user.sub,  # TODO(data-migration): sub is UUID; DB upload/audit expects integer user_id ip=_ip(request))
     return UploadCompleteOut(file=FileOut.model_validate(file))
 
 
 @router.delete("/{upload_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_csrf)])
 async def abort(upload_id: uuid_lib.UUID, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
-    await upload_service.abort_upload(db, upload_id=upload_id, user_id=user.id, ip=_ip(request))
+    await upload_service.abort_upload(db, upload_id=upload_id, user_id=user.sub,  # TODO(data-migration): sub is UUID; DB upload/audit expects integer user_id ip=_ip(request))
     return None
 

@@ -1,51 +1,37 @@
-"""Auth dependencies: current user, CSRF guard."""
+"""Auth dependencies — migrated to centralised auth service.
+
+Session-cookie auth (itsdangerous) is replaced by RS256 JWT validated
+by AuthMiddleware.  CSRF protection is no longer needed because JWT is
+sent as an Authorization: Bearer header, not as a cookie that the browser
+auto-submits on cross-origin requests.
+"""
 from __future__ import annotations
 
-import uuid
 from typing import Annotated
 
-from fastapi import Depends, Header, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, HTTPException, Request, status
 
-from app.auth.sessions import load_session, touch_session
-from app.core.config import settings
-from app.core.errors import Forbidden, Unauthorized
-from app.db.session import get_db
-from app.models import User
+from auth_client import AuthenticatedUser
 
 
-async def current_user(
-    request: Request,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
-    raw = request.cookies.get(settings.SESSION_COOKIE_NAME)
-    if not raw:
-        raise Unauthorized("No session")
-    try:
-        sid = uuid.UUID(raw)
-    except ValueError:
-        raise Unauthorized("Bad session")
-    loaded = await load_session(db, sid)
-    if not loaded:
-        raise Unauthorized("Session expired")
-    sess, user = loaded
-    await touch_session(db, sess.id)
-    request.state.user = user
-    request.state.session_id = sess.id
+async def current_user(request: Request) -> AuthenticatedUser:
+    """Return the authenticated user injected by AuthMiddleware.
+
+    AuthMiddleware validates the RS256 JWT and populates request.state.user.
+    Returns AuthenticatedUser with .sub (UUID str) and .grants (list[str]).
+    """
+    user = getattr(request.state, "user", None)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
     return user
 
 
-async def require_csrf(
-    request: Request,
-    x_requested_with: Annotated[str | None, Header(alias="X-Requested-With")] = None,
-) -> None:
-    """Enforce X-Requested-With header on state-changing requests; SameSite=Lax cookie covers the rest."""
-    if request.method in ("GET", "HEAD", "OPTIONS"):
-        return
-    if x_requested_with != "fetch":
-        raise Forbidden("Missing CSRF header")
+async def require_csrf(request: Request) -> None:
+    """No-op: CSRF protection is not needed with JWT Bearer auth."""
+    pass
 
 
-CurrentUser = Annotated[User, Depends(current_user)]
-
-
+CurrentUser = Annotated[AuthenticatedUser, Depends(current_user)]

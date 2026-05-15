@@ -26,12 +26,12 @@ async def list_trash(user: CurrentUser, db: AsyncSession = Depends(get_db)):
 
 @router.post("/files/{file_id}/restore", response_model=FileOut, dependencies=[Depends(require_csrf)])
 async def restore_file(file_id: int, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
-    return await trash_service.restore_file(db, file_id, user.id, _ip(request))
+    return await trash_service.restore_file(db, file_id, user.sub  # TODO(data-migration): sub is UUID; DB trash/audit expects integer user_id, _ip(request))
 
 
 @router.post("/folders/{folder_id}/restore", response_model=FolderOut, dependencies=[Depends(require_csrf)])
 async def restore_folder(folder_id: int, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
-    return await trash_service.restore_folder(db, folder_id, user.id, _ip(request))
+    return await trash_service.restore_folder(db, folder_id, user.sub  # TODO(data-migration): sub is UUID; DB trash/audit expects integer user_id, _ip(request))
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_csrf)])
