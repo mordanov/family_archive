@@ -1,32 +1,19 @@
-"""Auth dependencies — migrated to centralised auth service.
-
-Session-cookie auth (itsdangerous) is replaced by RS256 JWT validated
-by AuthMiddleware.  CSRF protection is no longer needed because JWT is
-sent as an Authorization: Bearer header, not as a cookie that the browser
-auto-submits on cross-origin requests.
-"""
+"""Auth dependencies — centralised auth service via JWT Bearer."""
 from __future__ import annotations
 
+import os
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Request
 
-from auth_client import AuthenticatedUser
+from auth_client import AuthenticatedUser, get_auth_dependency
 
+_verify = get_auth_dependency(
+    app_name=os.environ.get("AUTH_APP_NAME", "family-archive"),
+    jwks_url=os.environ.get("AUTH_SERVICE_URL", "http://localhost:8000") + "/.well-known/jwks.json",
+)
 
-async def current_user(request: Request) -> AuthenticatedUser:
-    """Return the authenticated user injected by AuthMiddleware.
-
-    AuthMiddleware validates the RS256 JWT and populates request.state.user.
-    Returns AuthenticatedUser with .sub (UUID str) and .grants (list[str]).
-    """
-    user = getattr(request.state, "user", None)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-        )
-    return user
+current_user = _verify
 
 
 async def require_csrf(request: Request) -> None:
@@ -34,4 +21,4 @@ async def require_csrf(request: Request) -> None:
     pass
 
 
-CurrentUser = Annotated[AuthenticatedUser, Depends(current_user)]
+CurrentUser = Annotated[AuthenticatedUser, Depends(_verify)]

@@ -12,20 +12,6 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://archive:archive@localhost:5432/archive"
 
-    # Auth / sessions
-    SECRET_KEY: str = "change-me-archive-secret"
-    SESSION_COOKIE_NAME: str = "archive_session"
-    SESSION_LIFETIME_DAYS: int = 30
-    SESSION_SHORT_LIFETIME_DAYS: int = 1
-    COOKIE_SECURE: bool = True
-    COOKIE_DOMAIN: str | None = None
-
-    # Seeded users
-    ARCHIVE_USER1_USERNAME: str = "user1"
-    ARCHIVE_USER1_PASSWORD: str = "change-me-1"
-    ARCHIVE_USER2_USERNAME: str = "user2"
-    ARCHIVE_USER2_PASSWORD: str = "change-me-2"
-
     # S3 / Hetzner Object Storage
     S3_ENDPOINT_URL: str = "http://minio:9000"
     S3_REGION: str = "us-east-1"
