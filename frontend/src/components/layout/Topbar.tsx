@@ -17,7 +17,7 @@ export function Topbar() {
     mutationFn: authApi.logout,
     onSuccess: () => {
       qc.clear()
-      nav('/login', { replace: true })
+      nav('/', { replace: true })
     },
   })
   return (
@@ -39,7 +39,7 @@ export function Topbar() {
         </Link>
         <LanguageSwitcher />
         <span className="hidden items-center gap-1 text-sm text-ink-muted md:flex">
-          <UserIcon size={16} /> {me.data?.username ?? '…'}
+          <UserIcon size={16} />
         </span>
         <button
           onClick={() => logout.mutate()}

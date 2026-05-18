@@ -1,5 +1,5 @@
 // Mirror of backend pydantic schemas (kept thin/manual to avoid codegen churn).
-export interface User { id: number; username: string }
+export interface User { sub: string; grants: string[] }
 
 export interface Tag { id: number; name: string; color: string | null }
 
