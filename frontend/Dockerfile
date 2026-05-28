@@ -1,6 +1,9 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+ARG VITE_AUTH_URL=http://localhost:3000
+ENV VITE_AUTH_URL=${VITE_AUTH_URL}
+
 COPY package*.json ./
 RUN npm install --no-audit --no-fund
 COPY . .
