@@ -1,4 +1,3 @@
-// Tiny fetch wrapper. Sends Authorization Bearer token, normalizes errors.
 import type { ApiError } from '@/types/api'
 
 const BASE = '/api/v1'
@@ -18,21 +17,12 @@ export class HttpError extends Error {
   }
 }
 
-/** Decode the exp claim from a JWT without verifying the signature (UI-only). */
-function getTokenExp(token: string): number {
-  try { return JSON.parse(atob(token.split('.')[1])).exp } catch { return 0 }
-}
-
 let redirecting = false
 
-/** Redirect the browser to the auth service login page, preserving current URL. */
-function redirectToAuth(): void {
+function redirectToLogin(): void {
   if (redirecting) return
   redirecting = true
-  const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3000'
-  window.location.replace(
-    `${authUrl}/auth/login?redirect_after=${encodeURIComponent(window.location.href)}`
-  )
+  window.location.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
 }
 
 type Init = Omit<RequestInit, 'body'> & {
@@ -46,28 +36,15 @@ export async function api<T = unknown>(path: string, init: Init = {}): Promise<T
   const isMutation = method !== 'GET' && method !== 'HEAD'
   if (isMutation) headers.set('X-Requested-With', 'fetch')
 
-  const token = localStorage.getItem('access_token')
-  if (token) {
-    // Proactively redirect before the request fires if the token expires in < 60 s
-    if (getTokenExp(token) - Date.now() / 1000 < 60) {
-      redirectToAuth()
-      return Promise.reject(new Error('token_expired')) as Promise<T>
-    }
-    headers.set('Authorization', `Bearer ${token}`)
-  }
-
   let body: BodyInit | null | undefined = init.body as BodyInit | null | undefined
   if (init.json !== undefined) {
     headers.set('Content-Type', 'application/json')
     body = JSON.stringify(init.json)
   }
 
-  const r = await fetch(BASE + path, { ...init, headers, body })
+  const r = await fetch(BASE + path, { ...init, headers, body, credentials: 'same-origin' })
   if (!r.ok) {
-    if (r.status === 401) {
-      localStorage.removeItem('access_token')
-      redirectToAuth()
-    }
+    if (r.status === 401) redirectToLogin()
     const text = await r.text()
     let errBody: ApiError | string
     try {
@@ -85,4 +62,3 @@ export async function api<T = unknown>(path: string, init: Init = {}): Promise<T
 }
 
 export const apiBase = BASE
-
