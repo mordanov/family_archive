@@ -38,6 +38,8 @@ class Settings(BaseSettings):
 
     # CORS / cookies
     ALLOWED_ORIGINS: str = "http://localhost:5173"
+    COOKIE_SECURE: bool = True
+    SESSION_TTL_SECONDS: int = 7 * 24 * 3600  # 7 days
 
     @property
     def allowed_origins(self) -> List[str]:
