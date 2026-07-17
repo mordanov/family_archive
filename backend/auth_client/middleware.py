@@ -1,6 +1,4 @@
 """FastAPI and Django middleware for the auth-client SDK."""
-from __future__ import annotations
-
 from typing import Any, Callable
 
 from auth_client.exceptions import AuthError, NoGrantError, TokenExpiredError
