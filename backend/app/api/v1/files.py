@@ -38,12 +38,12 @@ async def patch_file(file_id: int, payload: FilePatch, request: Request, user: C
     if payload.name is not None:
         await files_repo.rename(db, f, sanitize_name(payload.name))
         # TODO(data-migration): user.sub is a UUID string; audit log expects integer user_id
-        await audit_repo.log(db, user_id=None, action="rename", entity_type="file", entity_id=f.id, ip=_ip(request))
+        await audit_repo.log(db, user_id=user.id, action="rename", entity_type="file", entity_id=f.id, ip=_ip(request))
     if payload.folder_id is not None and payload.folder_id != f.folder_id:
         await folders_repo.get(db, payload.folder_id)
         await files_repo.move(db, f, payload.folder_id)
         # TODO(data-migration): user.sub is a UUID string; audit log expects integer user_id
-        await audit_repo.log(db, user_id=None, action="move", entity_type="file", entity_id=f.id, ip=_ip(request))
+        await audit_repo.log(db, user_id=user.id, action="move", entity_type="file", entity_id=f.id, ip=_ip(request))
     return f
 
 
@@ -52,7 +52,7 @@ async def delete_file(file_id: int, request: Request, user: CurrentUser, db: Asy
     f = await files_repo.get(db, file_id)
     await files_repo.soft_delete(db, f)
     # TODO(data-migration): user.sub is a UUID string; audit log expects integer user_id
-    await audit_repo.log(db, user_id=None, action="delete", entity_type="file", entity_id=f.id, ip=_ip(request))
+    await audit_repo.log(db, user_id=user.id, action="delete", entity_type="file", entity_id=f.id, ip=_ip(request))
     return None
 
 
@@ -80,7 +80,7 @@ async def rotate_file(file_id: int, request: Request, user: CurrentUser, db: Asy
     f.size_bytes = len(rotated)
     f.has_thumbnail = False
     # TODO(data-migration): user.sub is a UUID string; audit log expects integer user_id
-    await audit_repo.log(db, user_id=None, action="rotate", entity_type="file", entity_id=f.id, ip=_ip(request))
+    await audit_repo.log(db, user_id=user.id, action="rotate", entity_type="file", entity_id=f.id, ip=_ip(request))
     await db.commit()
     await db.refresh(f)
 
@@ -119,7 +119,7 @@ async def raw(file_id: int, user: CurrentUser, db: AsyncSession = Depends(get_db
 async def download(file_id: int, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db),
                    range: str | None = Header(default=None)):
     # TODO(data-migration): user.sub is a UUID string; audit log expects integer user_id
-    await audit_repo.log(db, user_id=None, action="download", entity_type="file", entity_id=file_id, ip=_ip(request))
+    await audit_repo.log(db, user_id=user.id, action="download", entity_type="file", entity_id=file_id, ip=_ip(request))
     return await _stream_file_response(file_id, db, range, attachment=True)
 
 

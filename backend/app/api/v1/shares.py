@@ -48,7 +48,7 @@ def _to_out(s) -> ShareOut:
 @router.post("", response_model=ShareOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_csrf)])
 async def create(payload: ShareCreate, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
     # TODO(data-migration): user.sub is a UUID string; share service expects integer user_id
-    s = await share_service.create(db, payload=payload, user_id=None, ip=_ip(request))
+    s = await share_service.create(db, payload=payload, user_id=user.id, ip=_ip(request))
     return _to_out(s)
 
 
@@ -60,7 +60,7 @@ async def list_(user: CurrentUser, db: AsyncSession = Depends(get_db)):
 @router.delete("/{share_id}", status_code=204, dependencies=[Depends(require_csrf)])
 async def revoke(share_id: int, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
     # TODO(data-migration): user.sub is a UUID string; share service expects integer user_id
-    await share_service.revoke(db, share_id=share_id, user_id=None, ip=_ip(request))
+    await share_service.revoke(db, share_id=share_id, user_id=user.id, ip=_ip(request))
     return None
 
 
