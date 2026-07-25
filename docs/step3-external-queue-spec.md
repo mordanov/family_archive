@@ -45,10 +45,14 @@ FastAPI/asyncio stacks and requires no new language runtime.
 
 ### Docker Compose changes (`docker-compose.yml`)
 
-Add two new services:
+**Note: production is deployed via `web-folders/docker-compose.yaml`, not
+`family-archive/docker-compose.yml`. All compose changes must go into the
+web-folders file. The family-archive compose is used for local dev only.**
+
+Add two new services to `web-folders/docker-compose.yaml`:
 
 ```yaml
-redis:
+archive-redis:
   image: redis:7-alpine
   restart: unless-stopped
   deploy:
@@ -60,27 +64,34 @@ redis:
   command: redis-server --save 60 1 --loglevel warning
 
 archive-worker:
-  build:
-    context: ./backend
-    dockerfile: Dockerfile
+  image: ghcr.io/mordanov/archive-backend:latest
   restart: unless-stopped
   command: python -m arq app.workers.arq_worker.WorkerSettings
   deploy:
     replicas: 1
     resources:
       limits:
-        memory: 800m
+        memory: ${ARCHIVE_WORKER_MEMORY_LIMIT:-800m}
   environment:
     # same env vars as archive-backend, plus:
-    REDIS_URL: redis://redis:6379
-    FFMPEG_CONCURRENCY: "1"
-    IMAGE_CONCURRENCY: "2"
+    DATABASE_URL: postgresql+asyncpg://${ARCHIVE_POSTGRES_USER:-archive_user}:${ARCHIVE_POSTGRES_PASSWORD:-change-me-archive-db}@recipes-db:5432/${ARCHIVE_POSTGRES_DB:-archive}
+    REDIS_URL: redis://archive-redis:6379
+    FFMPEG_CONCURRENCY: ${ARCHIVE_FFMPEG_CONCURRENCY:-1}
+    IMAGE_CONCURRENCY: ${ARCHIVE_IMAGE_CONCURRENCY:-2}
+    # ... same S3/storage/auth vars as archive-backend
+  depends_on:
+    recipes-db:
+      condition: service_healthy
+    archive-redis:
+      condition: service_started
 ```
 
 Remove `THUMBNAIL_WORKER_COUNT` from `archive-backend` environment — the backend
 no longer runs workers.
 
-Add `archive_redis_data` to the `volumes:` section.
+Add `archive-worker` to the `nginx` `depends_on` list.
+
+Add `archive_redis_data` to the top-level `volumes:` section.
 
 ### Backend changes
 

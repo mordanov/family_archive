@@ -4,11 +4,6 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          memory: 1400m
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://archive_user:archive_pass@localhost:5432/archive}
       SECRET_KEY: ${SECRET_KEY:-change-me-archive-secret}
@@ -29,7 +24,7 @@ services:
       CHUNK_SIZE_BYTES: ${CHUNK_SIZE_BYTES:-8388608}
       TRASH_RETENTION_DAYS: ${TRASH_RETENTION_DAYS:-30}
       THUMBNAIL_DIR: ${THUMBNAIL_DIR:-/app/data/thumbnails}
-      THUMBNAIL_WORKER_COUNT: ${THUMBNAIL_WORKER_COUNT:-1}
+      THUMBNAIL_WORKER_COUNT: ${THUMBNAIL_WORKER_COUNT:-4}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
