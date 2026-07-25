@@ -6,6 +6,21 @@ import { chunksOf } from '@/lib/chunking'
 
 const MAX_CONCURRENT = 10
 const DONE_REMOVAL_DELAY_MS = 3000
+const MAX_PART_RETRIES = 3
+const RETRY_DELAY_BASE_MS = 2000
+
+function isRetryable(e: unknown): boolean {
+  if (e instanceof TypeError) return true  // "Failed to fetch" — network error
+  if (e instanceof Error && /HTTP 5\d\d/.test(e.message)) return true
+  return false
+}
+
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => { clearTimeout(t); reject(signal.reason) }, { once: true })
+  })
+}
 
 export type UploadStatus =
   | 'queued'
@@ -94,7 +109,12 @@ export const useUploads = create<UploadStore>((set, get) => {
       if (!item || !item.file) return
       set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'preparing' } } }))
       try {
-        const init = await uploadsApi.init(item.folderId, item.filename, item.size, item.contentType)
+        const resp = await uploadsApi.init(item.folderId, item.filename, item.size, item.contentType)
+        if (resp.action === 'skipped') {
+          set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'done' } } }))
+          return
+        }
+        const init = resp.upload!
         const persisted = {
           uploadId: init.id,
           folderId: item.folderId,
@@ -213,42 +233,74 @@ async function runUploadLoop(
     if (get().items[localId]?.status !== 'uploading') return // paused/removed
     const ctrl = new AbortController()
     set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], ctrl } } }))
-    try {
-      const blob = file.slice(c.start, c.end)
-      await uploadsApi.putPart(item.uploadId, c.partNumber, blob, ctrl.signal)
-      have.add(c.partNumber)
-      const persisted2 = (await uploadsIDB.get(item.uploadId)) ?? persisted!
-      persisted2.receivedParts = [...have]
-      await uploadsIDB.put(persisted2)
+
+    let lastErr: unknown
+    let uploaded = false
+    for (let attempt = 0; attempt <= MAX_PART_RETRIES; attempt++) {
+      if (get().items[localId]?.status !== 'uploading') return
+      if (attempt > 0) {
+        set((s) => ({
+          items: { ...s.items, [localId]: { ...s.items[localId], error: `Retrying part ${c.partNumber} (${attempt}/${MAX_PART_RETRIES})…` } },
+        }))
+        try { await sleep(RETRY_DELAY_BASE_MS * attempt, ctrl.signal) } catch { return }
+        if (get().items[localId]?.status !== 'uploading') return
+      }
+      try {
+        const blob = file.slice(c.start, c.end)
+        await uploadsApi.putPart(item.uploadId, c.partNumber, blob, ctrl.signal)
+        uploaded = true
+        break
+      } catch (e) {
+        if (get().items[localId]?.status !== 'uploading') return // aborted/paused
+        if (!isRetryable(e) || attempt === MAX_PART_RETRIES) { lastErr = e; break }
+        lastErr = e
+      }
+    }
+
+    if (!uploaded) {
       set((s) => ({
-        items: {
-          ...s.items,
-          [localId]: {
-            ...s.items[localId],
-            uploadedParts: have.size,
-            bytesUploaded: s.items[localId].bytesUploaded + (c.end - c.start),
-          },
-        },
-      }))
-    } catch (e) {
-      // Aborted = pause; other = error
-      const cur = get().items[localId]
-      if (cur?.status !== 'uploading') return
-      set((s) => ({
-        items: { ...s.items, [localId]: { ...s.items[localId], status: 'error', error: String(e), ctrl: undefined } },
+        items: { ...s.items, [localId]: { ...s.items[localId], status: 'error', error: String(lastErr), ctrl: undefined } },
       }))
       return
     }
+
+    // Clear retry message once part succeeds
+    set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], error: undefined } } }))
+    have.add(c.partNumber)
+    const persisted2 = (await uploadsIDB.get(item.uploadId)) ?? persisted!
+    persisted2.receivedParts = [...have]
+    await uploadsIDB.put(persisted2)
+    set((s) => ({
+      items: {
+        ...s.items,
+        [localId]: {
+          ...s.items[localId],
+          uploadedParts: have.size,
+          bytesUploaded: s.items[localId].bytesUploaded + (c.end - c.start),
+        },
+      },
+    }))
   }
 
-  // Complete
+  // Complete — retry on transient errors
   set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'completing', ctrl: undefined } } }))
-  try {
-    await uploadsApi.complete(item.uploadId)
-    await uploadsIDB.remove(item.uploadId)
-    set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'done' } } }))
-  } catch (e) {
-    set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'error', error: String(e) } } }))
+  let completeErr: unknown
+  for (let attempt = 0; attempt <= MAX_PART_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_BASE_MS * attempt))
+    }
+    try {
+      await uploadsApi.complete(item.uploadId)
+      await uploadsIDB.remove(item.uploadId)
+      set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'done' } } }))
+      completeErr = undefined
+      break
+    } catch (e) {
+      if (!isRetryable(e) || attempt === MAX_PART_RETRIES) { completeErr = e; break }
+    }
+  }
+  if (completeErr !== undefined) {
+    set((s) => ({ items: { ...s.items, [localId]: { ...s.items[localId], status: 'error', error: String(completeErr) } } }))
   }
 }
 

@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.schemas import (
     UploadCompleteOut,
     UploadCreate,
+    UploadInitOut,
     UploadOut,
     UploadPartInfo,
     FileOut,
@@ -39,9 +40,9 @@ def _to_out(up) -> UploadOut:
     )
 
 
-@router.post("", response_model=UploadOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_csrf)])
+@router.post("", response_model=UploadInitOut, dependencies=[Depends(require_csrf)])
 async def init(payload: UploadCreate, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
-    up = await upload_service.init_upload(
+    result = await upload_service.init_upload(
         db,
         user_id=user.id,
         folder_id=payload.folder_id,
@@ -50,7 +51,9 @@ async def init(payload: UploadCreate, request: Request, user: CurrentUser, db: A
         content_type=payload.content_type,
         ip=_ip(request),
     )
-    return _to_out(up)
+    if isinstance(result, dict) and result.get("action") == "skipped":
+        return UploadInitOut(action="skipped", file=FileOut.model_validate(result["file"]))
+    return UploadInitOut(action="uploading", upload=_to_out(result))
 
 
 @router.get("/{upload_id}", response_model=UploadOut)

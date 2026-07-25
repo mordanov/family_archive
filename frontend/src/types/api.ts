@@ -41,6 +41,11 @@ export interface UploadServerState {
   status: 'init' | 'uploading' | 'completed' | 'aborted'
   parts: UploadPartInfo[]
 }
+export interface UploadInitResponse {
+  action: 'uploading' | 'skipped'
+  upload?: UploadServerState
+  file?: FileItem
+}
 
 export interface ZipEntry {
   path: string

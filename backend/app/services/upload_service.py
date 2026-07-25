@@ -26,7 +26,17 @@ async def init_upload(
         raise BadRequest("Negative size")
     folder = await folders_repo.get(db, folder_id)
     name = sanitize_name(filename)
-    await files_repo.assert_unique_name(db, folder.id, name)
+
+    existing = await files_repo.get_by_name(db, folder.id, name)
+    if existing is not None:
+        if existing.size_bytes == size_bytes:
+            # Same name, same size — treat as already uploaded; skip.
+            return {"action": "skipped", "file": existing}
+        # Same name, different size — soft-delete the old file so the new one can take its place.
+        await files_repo.soft_delete(db, existing)
+        await audit_repo.log(db, user_id=user_id, action="file_overwrite", entity_type="file",
+                             entity_id=existing.id,
+                             extra={"filename": name, "old_size": existing.size_bytes, "new_size": size_bytes}, ip=ip)
 
     chunk = settings.CHUNK_SIZE_BYTES
     total_parts = max(1, math.ceil(size_bytes / chunk)) if size_bytes > 0 else 1

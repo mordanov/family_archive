@@ -119,6 +119,12 @@ class UploadCompleteOut(BaseModel):
     file: FileOut
 
 
+class UploadInitOut(BaseModel):
+    action: Literal["uploading", "skipped"]
+    upload: UploadOut | None = None
+    file: FileOut | None = None
+
+
 # ---------- tags ----------
 class TagCreate(BaseModel):
     name: str = Field(min_length=1, max_length=64)

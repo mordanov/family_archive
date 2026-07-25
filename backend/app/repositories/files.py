@@ -32,6 +32,19 @@ async def list_in_folder(db: AsyncSession, folder_id: int) -> list[File]:
     return list(res.scalars())
 
 
+async def get_by_name(db: AsyncSession, folder_id: int, name: str) -> File | None:
+    res = await db.execute(
+        select(File).where(
+            and_(
+                File.folder_id == folder_id,
+                func.lower(File.name) == name.lower(),
+                File.deleted_at.is_(None),
+            )
+        )
+    )
+    return res.scalar_one_or_none()
+
+
 async def assert_unique_name(db: AsyncSession, folder_id: int, name: str, exclude_id: int | None = None) -> None:
     q = select(File.id).where(
         and_(

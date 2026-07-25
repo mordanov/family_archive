@@ -1,9 +1,9 @@
 import { api } from './client'
-import type { UploadServerState } from '@/types/api'
+import type { UploadInitResponse, UploadServerState } from '@/types/api'
 
 export const uploadsApi = {
   init: (folder_id: number, filename: string, size_bytes: number, content_type: string) =>
-    api<UploadServerState>('/uploads', {
+    api<UploadInitResponse>('/uploads', {
       method: 'POST',
       json: { folder_id, filename, size_bytes, content_type },
     }),
