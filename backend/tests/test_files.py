@@ -7,7 +7,7 @@ async def _upload(client, name, body):
         json={"folder_id": 1, "filename": name, "size_bytes": len(body), "content_type": "application/octet-stream"},
         headers=HDR,
     )
-    up = init.json()
+    up = init.json()["upload"]
     await client.put(f"/api/v1/uploads/{up['id']}/parts/1", content=body,
                      headers={**HDR, "Content-Type": "application/octet-stream"})
     done = await client.post(f"/api/v1/uploads/{up['id']}/complete", headers=HDR)

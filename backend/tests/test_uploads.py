@@ -18,8 +18,8 @@ async def test_chunked_upload_lifecycle(auth_client):
         json={"folder_id": 1, "filename": "hello.bin", "size_bytes": len(body), "content_type": "application/octet-stream"},
         headers=HDR,
     )
-    assert init.status_code == 201, init.text
-    upload = init.json()
+    assert init.status_code == 200, init.text
+    upload = init.json()["upload"]
     assert upload["total_parts"] == 1
 
     r = await auth_client.put(
@@ -51,9 +51,9 @@ async def test_upload_wrong_size_rejected(auth_client):
         json={"folder_id": 1, "filename": "bad.bin", "size_bytes": 200, "content_type": "application/octet-stream"},
         headers=HDR,
     )
-    assert init.status_code == 201
+    assert init.status_code == 200
     r = await auth_client.put(
-        f"/api/v1/uploads/{init.json()['id']}/parts/1",
+        f"/api/v1/uploads/{init.json()['upload']['id']}/parts/1",
         content=body,
         headers={**HDR, "Content-Type": "application/octet-stream"},
     )
