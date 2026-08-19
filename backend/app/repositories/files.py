@@ -34,7 +34,7 @@ async def list_in_folder(db: AsyncSession, folder_id: int) -> list[File]:
 
 async def get_by_name(db: AsyncSession, folder_id: int, name: str) -> File | None:
     res = await db.execute(
-        select(File).where(
+        select(File).options(selectinload(File.tags)).where(
             and_(
                 File.folder_id == folder_id,
                 func.lower(File.name) == name.lower(),
