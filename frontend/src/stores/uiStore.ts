@@ -3,9 +3,15 @@ import type { FileItem, Folder } from '@/types/api'
 
 type ViewMode = 'list' | 'grid'
 
+export const SIDEBAR_MIN = 160
+export const SIDEBAR_MAX = 480
+
 interface UIState {
   viewMode: ViewMode
   setViewMode: (m: ViewMode) => void
+
+  sidebarWidth: number
+  setSidebarWidth: (w: number) => void
 
   expandedFolderIds: Set<number>
   toggleFolderExpanded: (id: number) => void
@@ -38,6 +44,22 @@ function persistViewMode(mode: ViewMode): void {
   }
 }
 
+function readInitialSidebarWidth(): number {
+  try {
+    const raw = localStorage.getItem('archive.sidebarWidth')
+    const n = raw ? parseInt(raw, 10) : NaN
+    return isNaN(n) ? 256 : Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, n))
+  } catch {
+    return 256
+  }
+}
+
+function persistSidebarWidth(w: number): void {
+  try {
+    localStorage.setItem('archive.sidebarWidth', String(w))
+  } catch { /* non-fatal */ }
+}
+
 function readExpandedFolderIds(): Set<number> {
   try {
     const raw = localStorage.getItem('archive.treeExpanded')
@@ -60,6 +82,13 @@ export const useUI = create<UIState>((set) => ({
   setViewMode: (m) => {
     persistViewMode(m)
     set({ viewMode: m })
+  },
+
+  sidebarWidth: readInitialSidebarWidth(),
+  setSidebarWidth: (w) => {
+    const clamped = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, w))
+    persistSidebarWidth(clamped)
+    set({ sidebarWidth: clamped })
   },
 
   expandedFolderIds: readExpandedFolderIds(),

@@ -1,7 +1,8 @@
+import { useCallback } from 'react'
 import { ChevronDown, ChevronRight, Folder as FolderIcon, Home } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { useFolderChildren } from '@/hooks/useFolderTree'
-import { useUI } from '@/stores/uiStore'
+import { useUI, SIDEBAR_MIN, SIDEBAR_MAX } from '@/stores/uiStore'
 import { useTranslation } from 'react-i18next'
 
 interface NodeProps {
@@ -84,9 +85,30 @@ export function Sidebar() {
   const { t } = useTranslation()
   const { id } = useParams()
   const activeFolderId = id ? parseInt(id, 10) : null
+  const sidebarWidth = useUI((s) => s.sidebarWidth)
+  const setSidebarWidth = useUI((s) => s.setSidebarWidth)
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = sidebarWidth
+
+    const onMove = (ev: MouseEvent) => {
+      setSidebarWidth(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth + ev.clientX - startX)))
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [sidebarWidth, setSidebarWidth])
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-surface-strong bg-surface md:block">
+    <aside
+      style={{ width: sidebarWidth }}
+      className="relative hidden shrink-0 overflow-y-auto border-r border-surface-strong bg-surface md:block"
+    >
       <nav className="p-2">
         <FolderNode
           id={1}
@@ -96,6 +118,12 @@ export function Sidebar() {
           activeFolderId={activeFolderId}
         />
       </nav>
+
+      {/* Drag handle on the right edge */}
+      <div
+        onMouseDown={startResize}
+        className="absolute inset-y-0 right-0 w-1 cursor-col-resize hover:bg-accent/40 active:bg-accent/60"
+      />
     </aside>
   )
 }
