@@ -1,8 +1,6 @@
 // Service Worker для Family Archive PWA
-const CACHE_NAME = 'family-archive-v1'
+const CACHE_NAME = 'family-archive-v3'
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
   '/favicon.svg',
   '/site.webmanifest',
 ]
@@ -35,50 +33,56 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Fetch event - network-first для API, cache-first для остального
+// Fetch event - network-first для API и навигации, cache-first для хешированных ассетов
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
+
+  // Навигационные запросы (index.html) — всегда сеть, кеш только как fallback офлайн.
+  // Это критично: после деплоя с новыми хешами ассетов SW не должен отдавать
+  // устаревший index.html, иначе браузер получит 404 на старые *.js/*.css файлы.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            caches.open(CACHE_NAME).then((c) => c.put(request, response.clone()))
+          }
+          return response
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+    )
+    return
+  }
 
   // API запросы - сначала сеть
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Кешируем успешные ответы
           if (response.ok && request.method === 'GET') {
-            const cache = caches.open(CACHE_NAME)
-            cache.then((c) => c.put(request, response.clone()))
+            caches.open(CACHE_NAME).then((c) => c.put(request, response.clone()))
           }
           return response
         })
-        .catch(() => {
-          // Offline - пытаемся вернуть из кеша
-          return caches.match(request)
-        })
+        .catch(() => caches.match(request))
     )
     return
   }
 
-  // Статические ресурсы - кеш в первую очередь
+  // Хешированные ассеты (/assets/index-*.js, /assets/index-*.css) — кеш в первую очередь.
+  // Имена файлов содержат хеш содержимого, поэтому кешировать безопасно бессрочно.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached
       return fetch(request)
         .then((response) => {
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response
+          if (response && response.status === 200 && response.type !== 'error') {
+            caches.open(CACHE_NAME).then((c) => c.put(request, response.clone()))
           }
-          const cache = caches.open(CACHE_NAME)
-          cache.then((c) => c.put(request, response.clone()))
           return response
         })
-        .catch(() => {
-          // Fallback для offline
-          if (request.destination === 'document') {
-            return caches.match('/')
-          }
-        })
+        .catch(() => undefined)
     })
   )
 })
