@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
 import { AppShell } from '@/components/layout/AppShell'
 import { BrowserPage } from '@/routes/BrowserPage'
+import { DownloadsPage } from '@/routes/DownloadsPage'
 import { LoginPage } from '@/routes/LoginPage'
 import { TrashPage } from '@/routes/TrashPage'
 import { SharePage } from '@/routes/SharePage'
@@ -39,6 +40,7 @@ export function App() {
       <Route element={<RequireAuth><AppShell /></RequireAuth>}>
         <Route index element={<Navigate to="/folder/1" replace />} />
         <Route path="/folder/:id" element={<BrowserPage />} />
+        <Route path="/downloads" element={<DownloadsPage />} />
         <Route path="/trash" element={<TrashPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

@@ -3,6 +3,7 @@ import { LogOut, User as UserIcon, Trash2, Archive, LayoutGrid, List } from 'luc
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
+import { downloadsApi } from '@/api/downloads'
 import { useUI } from '@/stores/uiStore'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
@@ -13,6 +14,13 @@ export function Topbar() {
   const view = useUI((s) => s.viewMode)
   const setView = useUI((s) => s.setViewMode)
   const me = useQuery({ queryKey: ['me'], queryFn: authApi.me, retry: false })
+  const downloads = useQuery({
+    queryKey: ['downloads'],
+    queryFn: () => downloadsApi.list(20),
+    refetchInterval: 3000,
+    enabled: me.isSuccess,
+  })
+  const activeCount = downloads.data?.active.length ?? 0
   const logout = useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
@@ -35,7 +43,18 @@ export function Topbar() {
             <LayoutGrid size={14} />{t('navigation.grid')}
           </button>
         </div>
-        <Link to="/trash" className="icon-btn" title={t('navigation.trash')}>
+        <Link
+          to="/downloads"
+          className="relative rounded p-2 text-ink-muted hover:bg-surface-muted"
+          title={t('navigation.downloads')}
+          <Download size={18} />
+          {activeCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">
+              {activeCount}
+            </span>
+          )}
+        </Link>
+        <Link to="/trash" className="rounded p-2 text-ink-muted hover:bg-surface-muted" title={t('navigation.trash')}>
           <Trash2 size={18} />
         </Link>
         <LanguageSwitcher />

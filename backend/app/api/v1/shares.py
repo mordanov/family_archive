@@ -23,7 +23,7 @@ from app.schemas import (
     SharePublicMeta,
     ShareUnlock,
 )
-from app.services import share_service
+from app.services import download_service, share_service
 from app.storage.object_store import object_store
 from app.utils.range_header import parse_range
 from app.utils.ratelimit import RateLimiter
@@ -121,6 +121,15 @@ async def public_download(
     rng = parse_range(range, f.size_bytes)
     if rng:
         iterator, _ = await object_store.get_object_stream(f.s3_key, range_header=f"bytes={rng.start}-{rng.end}")
+        iterator = await download_service.track_stream(
+            iterator,
+            file_id=f.id,
+            filename=f.name,
+            source="share",
+            total_bytes=rng.length,
+            share_id=s.id,
+            ip=_ip(request),
+        )
         headers = {
             "Content-Length": str(rng.length),
             "Content-Range": f"bytes {rng.start}-{rng.end}/{f.size_bytes}",
@@ -129,6 +138,15 @@ async def public_download(
         }
         return StreamingResponse(iterator, status_code=206, media_type=f.content_type, headers=headers)
     iterator, _ = await object_store.get_object_stream(f.s3_key)
+    iterator = await download_service.track_stream(
+        iterator,
+        file_id=f.id,
+        filename=f.name,
+        source="share",
+        total_bytes=f.size_bytes,
+        share_id=s.id,
+        ip=_ip(request),
+    )
     headers = {
         "Content-Length": str(f.size_bytes),
         "Accept-Ranges": "bytes",
