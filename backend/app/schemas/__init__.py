@@ -189,3 +189,28 @@ class ZipEntry(BaseModel):
     compressed_size: int
     modified: datetime | None
 
+
+# ---------- downloads ----------
+class DownloadItemOut(BaseModel):
+    id: uuid_lib.UUID
+    file_id: int | None
+    filename: str
+    source: Literal["direct", "share"]
+    username: str | None = None
+    share_id: int | None = None
+    ip: str | None = None
+    total_bytes: int
+    bytes_sent: int
+    progress_pct: float
+    speed_bps: int
+    status: Literal["active", "completed", "aborted", "error"]
+    started_at: datetime
+    updated_at: datetime
+    finished_at: datetime | None = None
+
+
+class DownloadsOverview(BaseModel):
+    active: list[DownloadItemOut]
+    history: list[DownloadItemOut]
+
+

@@ -14,7 +14,7 @@ from app.repositories import files as files_repo
 from app.repositories import folders as folders_repo
 from app.repositories import tags as tags_repo
 from app.schemas import FileOut, FilePatch
-from app.services import preview_service
+from app.services import download_service, preview_service
 from app.storage.object_store import object_store
 from app.storage.thumbnail_store import thumbnail_store
 from app.utils.filenames import sanitize_name
@@ -88,11 +88,21 @@ async def rotate_file(file_id: int, request: Request, user: CurrentUser, db: Asy
     return f
 
 
-async def _stream_file_response(file_id: int, db: AsyncSession, range_header: str | None, attachment: bool):
+async def _stream_file_response(
+    file_id: int,
+    db: AsyncSession,
+    range_header: str | None,
+    attachment: bool,
+    *,
+    user_id: int | None = None,
+    username: str | None = None,
+    ip: str | None = None,
+):
     f = await files_repo.get(db, file_id)
     rng = parse_range(range_header, f.size_bytes)
     if rng:
         iterator, meta = await object_store.get_object_stream(f.s3_key, range_header=f"bytes={rng.start}-{rng.end}")
+        total_bytes = rng.length
         headers = {
             "Content-Length": str(rng.length),
             "Content-Range": f"bytes {rng.start}-{rng.end}/{f.size_bytes}",
@@ -101,10 +111,21 @@ async def _stream_file_response(file_id: int, db: AsyncSession, range_header: st
         status_code = 206
     else:
         iterator, meta = await object_store.get_object_stream(f.s3_key)
+        total_bytes = f.size_bytes
         headers = {"Content-Length": str(f.size_bytes), "Accept-Ranges": "bytes"}
         status_code = 200
     if attachment:
         headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(f.name)}"
+        iterator = await download_service.track_stream(
+            iterator,
+            file_id=f.id,
+            filename=f.name,
+            source="direct",
+            total_bytes=total_bytes,
+            user_id=user_id,
+            username=username,
+            ip=ip,
+        )
     headers["X-Content-Type-Options"] = "nosniff"
     return StreamingResponse(iterator, status_code=status_code, media_type=f.content_type, headers=headers)
 
@@ -120,7 +141,15 @@ async def download(file_id: int, request: Request, user: CurrentUser, db: AsyncS
                    range: str | None = Header(default=None)):
     # TODO(data-migration): user.sub is a UUID string; audit log expects integer user_id
     await audit_repo.log(db, user_id=user.id, action="download", entity_type="file", entity_id=file_id, ip=_ip(request))
-    return await _stream_file_response(file_id, db, range, attachment=True)
+    return await _stream_file_response(
+        file_id,
+        db,
+        range,
+        attachment=True,
+        user_id=getattr(user, "id", None),
+        username=getattr(user, "username", None) or getattr(user, "sub", None),
+        ip=_ip(request),
+    )
 
 
 # --- tags on files ---

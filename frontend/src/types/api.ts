@@ -121,3 +121,27 @@ export interface FileMeta {
 
 export interface ApiError { code: string; message: string }
 
+export interface DownloadItem {
+  id: string
+  file_id: number | null
+  filename: string
+  source: 'direct' | 'share'
+  username: string | null
+  share_id: number | null
+  ip: string | null
+  total_bytes: number
+  bytes_sent: number
+  progress_pct: number
+  speed_bps: number
+  status: 'active' | 'completed' | 'aborted' | 'error'
+  started_at: string
+  updated_at: string
+  finished_at: string | null
+}
+
+export interface DownloadsOverview {
+  active: DownloadItem[]
+  history: DownloadItem[]
+}
+
+
