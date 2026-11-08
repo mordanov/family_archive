@@ -96,13 +96,13 @@ export function BrowserPage() {
 
   return (
     <DropZone folderId={folderId}>
-      <div className="mx-auto max-w-6xl p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mx-auto max-w-7xl p-6 pb-28">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
           {data ? <Breadcrumbs items={data.breadcrumb} /> : <div />}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setNewOpen(true)}
-              className="flex items-center gap-1 rounded border border-surface-strong bg-surface px-3 py-1.5 text-sm hover:bg-surface-muted"
+              className="btn-secondary"
             >
               <FolderPlus size={16} /> {t('navigation.newFolder')}
             </button>
@@ -111,23 +111,23 @@ export function BrowserPage() {
         </div>
 
         {hasSelection && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded border border-surface-strong bg-surface px-3 py-2 text-sm">
+          <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 animate-pop flex-wrap items-center gap-2 rounded-2xl border border-surface-strong bg-surface px-4 py-2.5 text-sm shadow-lift">
             <span className="text-ink-muted">{t('common.selectedMixed', { files: selectedFileIds.length, folders: selectedFolderIds.length })}</span>
             <button
               onClick={() => setBulkMoveOpen(true)}
-              className="inline-flex items-center gap-1 rounded border border-surface-strong px-2 py-1 hover:bg-surface-muted"
+              className="btn-secondary"
             >
               <MoveRight size={14} /> {t('common.moveSelected')}
             </button>
             <button
               onClick={() => setBulkDeleteOpen(true)}
-              className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-white hover:bg-red-700"
+              className="btn-danger"
             >
               <Trash2 size={14} /> {t('common.deleteSelected')}
             </button>
             <button
               onClick={() => selection.clear()}
-              className="ml-auto text-ink-muted hover:text-ink"
+              className="btn-ghost ml-2"
             >
               {t('common.clearSelection')}
             </button>

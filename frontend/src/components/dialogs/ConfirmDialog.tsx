@@ -17,12 +17,12 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, confir
     <Modal open={open} onClose={onClose} title={title}>
       <p className="mb-4 text-sm text-ink">{message}</p>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="rounded px-3 py-1.5 text-ink-muted hover:bg-surface-muted">
+        <button onClick={onClose} className="btn-ghost">
           {t('common.cancel')}
         </button>
         <button
           onClick={() => { onConfirm(); onClose() }}
-          className={`rounded px-3 py-1.5 text-white ${danger ? 'bg-red-600 hover:bg-red-700' : 'bg-accent hover:bg-accent-hover'}`}
+          className={danger ? 'btn-danger' : 'btn-primary'}
         >
           {confirmText === 'Confirm' ? t('common.confirm') : confirmText}
         </button>

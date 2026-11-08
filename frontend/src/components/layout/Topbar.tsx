@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, User as UserIcon, Trash2 } from 'lucide-react'
+import { LogOut, User as UserIcon, Trash2, Archive, LayoutGrid, List } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
@@ -21,20 +21,21 @@ export function Topbar() {
     },
   })
   return (
-    <header className="flex h-12 items-center justify-between border-b border-surface-strong bg-surface px-4">
-      <Link to="/" className="text-base font-semibold text-ink">📁 {t('common.appName')}</Link>
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-surface-strong/70 bg-surface/80 px-4 backdrop-blur-md">
+      <Link to="/" className="flex items-center gap-2 text-base font-semibold tracking-tight text-ink">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-white dark:text-canvas"><Archive size={17} /></span>
+        {t('common.appName')}
+      </Link>
       <div className="flex items-center gap-3">
-        <div className="hidden items-center rounded border border-surface-strong text-xs md:flex">
-          <button
-            className={`px-2 py-1 ${view === 'list' ? 'bg-surface-strong' : ''}`}
-            onClick={() => setView('list')}
-          >{t('navigation.list')}</button>
-          <button
-            className={`px-2 py-1 ${view === 'grid' ? 'bg-surface-strong' : ''}`}
-            onClick={() => setView('grid')}
-          >{t('navigation.grid')}</button>
+        <div className="segmented hidden md:inline-flex">
+          <button data-active={view === 'list'} className="inline-flex items-center gap-1" onClick={() => setView('list')}>
+            <List size={14} />{t('navigation.list')}
+          </button>
+          <button data-active={view === 'grid'} className="inline-flex items-center gap-1" onClick={() => setView('grid')}>
+            <LayoutGrid size={14} />{t('navigation.grid')}
+          </button>
         </div>
-        <Link to="/trash" className="rounded p-2 text-ink-muted hover:bg-surface-muted" title={t('navigation.trash')}>
+        <Link to="/trash" className="icon-btn" title={t('navigation.trash')}>
           <Trash2 size={18} />
         </Link>
         <LanguageSwitcher />
@@ -43,7 +44,7 @@ export function Topbar() {
         </span>
         <button
           onClick={() => logout.mutate()}
-          className="flex items-center gap-1 rounded p-2 text-ink-muted hover:bg-surface-muted"
+          className="icon-btn"
           title={t('auth.logout')}
         >
           <LogOut size={18} />

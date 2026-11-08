@@ -8,18 +8,18 @@ import { ShareDialog } from '@/components/dialogs/ShareDialog'
 
 export function AppShell() {
   return (
-    <div className="flex h-dvh w-full flex-col">
+    <div className="flex h-dvh w-full flex-col bg-canvas">
       <Topbar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto bg-surface-muted">
+        <main className="flex-1 overflow-auto bg-canvas">
           <Outlet />
         </main>
       </div>
       <UploadQueue />
       <RenameDialog />
       <ShareDialog />
-      <Toaster position="bottom-left" />
+      <Toaster position="bottom-center" toastOptions={{ style: { background: 'rgb(var(--surface))', color: 'rgb(var(--ink))', border: '1px solid rgb(var(--surface-strong))', borderRadius: '12px' } }} />
     </div>
   )
 }

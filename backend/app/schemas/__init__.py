@@ -141,6 +141,17 @@ class ShareCreate(BaseModel):
     max_downloads: int | None = Field(default=None, ge=1)
 
 
+class FolderLinksCreate(BaseModel):
+    folder_id: int
+    expires_at: datetime | None = None
+
+
+class FolderLinkOut(BaseModel):
+    file_id: int
+    path: str
+    token: str
+
+
 class ShareOut(_ORM):
     id: int
     token: str

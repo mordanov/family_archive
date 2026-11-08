@@ -14,6 +14,8 @@ from app.repositories import files as files_repo
 from app.repositories import folders as folders_repo
 from app.repositories import shares as shares_repo
 from app.schemas import (
+    FolderLinkOut,
+    FolderLinksCreate,
     FileOut,
     FolderOut,
     ShareCreate,
@@ -50,6 +52,14 @@ async def create(payload: ShareCreate, request: Request, user: CurrentUser, db: 
     # TODO(data-migration): user.sub is a UUID string; share service expects integer user_id
     s = await share_service.create(db, payload=payload, user_id=user.id, ip=_ip(request))
     return _to_out(s)
+
+
+@router.post("/folder-links", response_model=list[FolderLinkOut], dependencies=[Depends(require_csrf)])
+async def create_folder_links(payload: FolderLinksCreate, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
+    rows = await share_service.create_folder_links(
+        db, folder_id=payload.folder_id, expires_at=payload.expires_at, user_id=user.id, ip=_ip(request)
+    )
+    return [FolderLinkOut(file_id=i, path=p, token=t) for i, p, t in rows]
 
 
 @router.get("", response_model=list[ShareOut])

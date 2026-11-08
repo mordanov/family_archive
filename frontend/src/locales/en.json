@@ -132,7 +132,14 @@
     "requiresPassword": "Requires password",
     "downloads": "Downloads",
     "publicLinkCreated": "Public link created:",
-    "copy": "Copy"
+    "copy": "Copy",
+    "quickFile": "Copy download link",
+    "quickFolder": "Copy download links for all files",
+    "advanced": "Share options…",
+    "fileLinkCopied": "Download link copied",
+    "folderLinksCopied": "{{count}} download link(s) copied",
+    "folderEmpty": "No files to share in this folder",
+    "copyFailed": "Could not copy to clipboard"
   },
   "preview": {
     "download": "Download",

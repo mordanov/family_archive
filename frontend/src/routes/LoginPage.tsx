@@ -26,17 +26,17 @@ export function LoginPage() {
   })
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface">
+    <div className="flex min-h-screen items-center justify-center bg-canvas bg-[radial-gradient(60%_50%_at_50%_0%,rgb(var(--accent)/.18),transparent)] p-4">
       <form
-        className="w-full max-w-sm space-y-4 rounded border border-surface-strong bg-surface p-8"
+        className="w-full max-w-sm animate-pop space-y-5 rounded-xl2 border border-surface-strong bg-surface p-8 shadow-lift"
         onSubmit={(e) => { e.preventDefault(); login.mutate() }}
       >
-        <h1 className="text-lg font-semibold text-ink">📁 {t('common.appName')}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">{t('common.appName')}</h1>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <div className="space-y-1">
           <label className="text-sm text-ink-muted">{t('auth.username')}</label>
           <input
-            className="w-full rounded border border-surface-strong bg-surface px-3 py-2 text-sm text-ink focus:outline-none"
+            className="input"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
@@ -46,7 +46,7 @@ export function LoginPage() {
           <label className="text-sm text-ink-muted">{t('auth.password')}</label>
           <input
             type="password"
-            className="w-full rounded border border-surface-strong bg-surface px-3 py-2 text-sm text-ink focus:outline-none"
+            className="input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
@@ -55,7 +55,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={login.isPending}
-          className="w-full rounded bg-ink px-4 py-2 text-sm text-surface disabled:opacity-50"
+          className="btn-primary w-full py-2.5"
         >
           {login.isPending ? t('common.loading') : t('auth.login')}
         </button>

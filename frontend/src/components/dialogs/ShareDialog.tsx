@@ -48,23 +48,23 @@ export function ShareDialog() {
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-ink-muted">{t('share.password')}</span>
             <input value={password} onChange={(e) => setPassword(e.target.value)} type="password"
-              className="rounded border border-surface-strong px-3 py-2" />
+              className="input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-ink-muted">{t('share.expiresAt')}</span>
             <input value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} type="datetime-local"
-              className="rounded border border-surface-strong px-3 py-2" />
+              className="input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-ink-muted">{t('share.maxDownloads')}</span>
             <input value={maxDownloads} onChange={(e) => setMaxDownloads(e.target.value)} type="number" min={1}
-              className="rounded border border-surface-strong px-3 py-2" />
+              className="input" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setTarget(null)} className="rounded px-3 py-1.5 text-ink-muted hover:bg-surface-muted">
+            <button onClick={() => setTarget(null)} className="btn-ghost">
               {t('common.cancel')}
             </button>
-            <button onClick={create} className="rounded bg-accent px-3 py-1.5 text-white hover:bg-accent-hover">
+            <button onClick={create} className="btn-primary">
               {t('share.createLink')}
             </button>
           </div>
@@ -73,17 +73,17 @@ export function ShareDialog() {
         <div className="flex flex-col gap-3">
           <p className="text-sm text-ink-muted">{t('share.publicLinkCreated')}</p>
           <div className="flex gap-2">
-            <input readOnly value={created.url} className="flex-1 rounded border border-surface-strong px-3 py-2 font-mono text-sm" />
+            <input readOnly value={created.url} className="input flex-1 font-mono" />
             <button
               onClick={() => { navigator.clipboard.writeText(created.url); toast.success(t('share.copied')) }}
-              className="flex items-center gap-1 rounded bg-accent px-3 py-2 text-white"
+              className="btn-primary"
               aria-label={t('share.copy')}
             >
               <Copy size={16} /> {t('share.copy')}
             </button>
           </div>
           <div className="flex justify-end pt-2">
-            <button onClick={() => { setTarget(null); setCreated(null) }} className="rounded px-3 py-1.5 text-ink-muted hover:bg-surface-muted">
+            <button onClick={() => { setTarget(null); setCreated(null) }} className="btn-ghost">
               {t('common.done')}
             </button>
           </div>

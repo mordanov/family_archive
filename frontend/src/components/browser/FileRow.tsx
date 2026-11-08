@@ -2,10 +2,11 @@ import { useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Folder as FolderIcon, FileIcon, Image as ImgIcon, Video, Music, FileArchive, Pencil, Share2, Trash2 } from 'lucide-react'
+import { Folder as FolderIcon, FileIcon, Image as ImgIcon, Video, Music, FileArchive, Pencil, Share2, Trash2, SlidersHorizontal } from 'lucide-react'
 import type { FileItem, Folder } from '@/types/api'
 import { formatBytes, formatDate } from '@/lib/formatters'
 import { classifyMime } from '@/lib/mime'
+import { copyAsync, quickFileLink, quickFolderLinks } from '@/lib/quickShare'
 import { mapErrorToI18n } from '@/i18n/errors'
 import { filesApi } from '@/api/files'
 import { foldersApi } from '@/api/folders'
@@ -57,11 +58,27 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
     else setPreview(item.id)
   }
 
+  const quickShare = async () => {
+    try {
+      if (isFolder) {
+        let count = 0
+        await copyAsync(quickFolderLinks(item.id).then((r) => { count = r.count; return r.text }))
+        if (!count) toast(t('share.folderEmpty'))
+        else toast.success(t('share.folderLinksCopied', { count }))
+      } else {
+        await copyAsync(quickFileLink(item.id))
+        toast.success(t('share.fileLinkCopied'))
+      }
+    } catch (e) {
+      toast.error(mapErrorToI18n(t, e))
+    }
+  }
+
   const isGrid = viewMode === 'grid'
   const [thumbFailed, setThumbFailed] = useState(false)
   const actionSlotClass = isGrid
-    ? 'mt-2 flex w-full items-center justify-end gap-1'
-    : 'ml-2 flex items-center gap-1 opacity-0 transition group-hover:opacity-100'
+    ? 'absolute right-2 top-2 flex items-center gap-0.5 rounded-xl bg-surface/90 p-0.5 opacity-0 shadow-card backdrop-blur transition group-hover:opacity-100 group-focus-within:opacity-100'
+    : 'ml-2 flex items-center gap-0.5 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100'
   const showCheckbox = isFolder ? showFolderCheckbox : showFileCheckbox
   const file = isFolder ? null : (item as FileItem)
   const fileKind = file ? classifyMime(file.content_type, file.name) : 'other'
@@ -93,21 +110,27 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
     return () => observer.disconnect()
   }, [file, fileKind, isGrid, onVisibleFile])
 
+  const checkboxVisible = isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+
   return (
     <div
       ref={rowRef}
       tabIndex={0}
       onDoubleClick={onDoubleClick}
-      className={`group outline-none hover:bg-surface ${isSelected ? 'bg-accent/10' : ''} ${
+      className={`group relative outline-none transition focus-visible:ring-2 focus-visible:ring-accent/50 ${
         isGrid
-          ? 'rounded-md border border-surface-strong bg-surface p-3'
-          : 'flex items-center gap-3 border-b border-surface-strong px-3 py-2'
+          ? `rounded-xl2 border bg-surface p-2.5 shadow-card hover:-translate-y-0.5 hover:shadow-lift ${isSelected ? 'border-accent ring-2 ring-accent/30' : 'border-surface-strong'}`
+          : `flex items-center gap-3 border-b border-surface-strong px-3 py-2 first:rounded-t-xl2 last:rounded-b-xl2 last:border-b-0 hover:bg-surface-muted ${isSelected ? 'bg-accent/10' : ''}`
       }`}
     >
-      <div className={`flex h-6 w-6 items-center justify-center ${isGrid ? 'mb-2' : 'shrink-0'}`} onClick={(e) => e.stopPropagation()}>
-        {showCheckbox && (
+      {showCheckbox && (
+        <div
+          className={`${isGrid ? `absolute left-4 top-4 z-10 rounded-md bg-surface/90 p-1 shadow-card ${checkboxVisible}` : 'shrink-0'} flex items-center`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <input
             type="checkbox"
+            className="h-4 w-4 cursor-pointer rounded accent-[rgb(var(--accent))]"
             checked={isSelected}
             onChange={(e) => {
               if (isFolder) sel.setFolderSelected(item.id, e.target.checked)
@@ -115,10 +138,10 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
             }}
             aria-label={t('file.select')}
           />
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className={`overflow-hidden rounded bg-surface-muted ${isGrid ? 'mb-2 h-28 w-full' : 'h-9 w-9 shrink-0'}`}>
+      <div className={`overflow-hidden bg-surface-muted ${isGrid ? 'mb-2.5 h-32 w-full rounded-xl' : 'h-10 w-10 shrink-0 rounded-lg'}`}>
         {canShowThumbnail ? (
           <img
             src={filesApi.thumbnailUrl(file!.id, 256)}
@@ -128,38 +151,33 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
             onError={() => setThumbFailed(true)}
           />
         ) : isFolder ? (
-          <div className="flex h-full w-full items-center justify-center"><FolderIcon size={20} className="text-ink-muted" /></div>
+          <div className="flex h-full w-full items-center justify-center bg-accent/10"><FolderIcon size={isGrid ? 36 : 20} className="text-accent" /></div>
         ) : (
           <div className="flex h-full w-full items-center justify-center">{kindIcon(file!)}</div>
         )}
       </div>
 
-      {/* Name */}
-      <div className={`min-w-0 ${isGrid ? '' : 'flex-1'}`}>
-        <div className="truncate text-sm text-ink">{item.name || t('navigation.home')}</div>
+      <div className={`min-w-0 ${isGrid ? 'px-1 pb-1' : 'flex-1'}`}>
+        <div className="truncate text-sm font-medium text-ink">{item.name || t('navigation.home')}</div>
         <div className="truncate text-xs text-ink-muted">
           {isFolder ? t('folder.typeLabel') : `${formatBytes((item as FileItem).size_bytes)} • ${(item as FileItem).content_type}`}
+          {isGrid && ` • ${formatDate(item.updated_at)}`}
         </div>
       </div>
 
-      {/* Date */}
-      <div className={`${isGrid ? 'mt-1 text-xs text-ink-muted' : 'hidden w-32 shrink-0 text-xs text-ink-muted sm:block'}`}>{formatDate(item.updated_at)}</div>
+      {!isGrid && <div className="hidden w-32 shrink-0 text-xs text-ink-muted sm:block">{formatDate(item.updated_at)}</div>}
 
-      {/* Actions */}
       <div className={actionSlotClass}>
-        <button
-          className="rounded p-1.5 text-ink-muted hover:bg-surface-strong"
-          title={t('folder.rename')}
+        <button className="icon-btn" title={t('folder.rename')}
           onClick={(e) => { e.stopPropagation(); setRename({ kind, item }) }}
         ><Pencil size={15} /></button>
-        <button
-          className="rounded p-1.5 text-ink-muted hover:bg-surface-strong"
-          title={t('share.share')}
-          onClick={(e) => { e.stopPropagation(); setShare({ kind, id: item.id, name: item.name }) }}
+        <button className="icon-btn" title={isFolder ? t('share.quickFolder') : t('share.quickFile')}
+          onClick={(e) => { e.stopPropagation(); void quickShare() }}
         ><Share2 size={15} /></button>
-        <button
-          className="rounded p-1.5 text-red-600 hover:bg-red-50"
-          title={t('common.delete')}
+        <button className="icon-btn" title={t('share.advanced')}
+          onClick={(e) => { e.stopPropagation(); setShare({ kind, id: item.id, name: item.name }) }}
+        ><SlidersHorizontal size={15} /></button>
+        <button className="icon-btn hover:!bg-red-500/10 hover:!text-red-600" title={t('common.delete')}
           onClick={(e) => { e.stopPropagation(); removeMut.mutate() }}
         ><Trash2 size={15} /></button>
       </div>
