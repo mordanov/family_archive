@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     audit,
     auth,
+    downloads,
     files,
     folders,
     health,
@@ -27,4 +28,5 @@ api_router.include_router(tags.router, prefix="/tags", tags=["tags"])
 api_router.include_router(shares.router, prefix="/shares", tags=["shares"])
 api_router.include_router(trash.router, prefix="/trash", tags=["trash"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
+api_router.include_router(downloads.router, prefix="/downloads", tags=["downloads"])
 

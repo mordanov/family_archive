@@ -192,7 +192,7 @@ class ZipEntry(BaseModel):
 
 # ---------- downloads ----------
 class DownloadItemOut(BaseModel):
-    id: uuid.UUID
+    id: uuid_lib.UUID
     file_id: int | None
     filename: str
     source: Literal["direct", "share"]
