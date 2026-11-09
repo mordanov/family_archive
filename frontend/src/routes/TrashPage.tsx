@@ -31,7 +31,7 @@ export function TrashPage() {
         <h2 className="text-lg font-semibold">{t('trash.trash')}</h2>
         <button
           onClick={() => { if (confirm(t('trash.permanentlyDeleteFilesOlderThan30Days'))) empty.mutate() }}
-          className="flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+          className="btn-danger"
         >
           <Trash2 size={14} /> {t('trash.emptyTrashPurge')}
         </button>
@@ -40,7 +40,7 @@ export function TrashPage() {
         {t('trash.retentionHint')}
       </p>
 
-      <div className="rounded border border-surface-strong bg-surface">
+      <div className="rounded-xl2 border border-surface-strong bg-surface shadow-card">
         {data?.folders.length === 0 && data?.files.length === 0 && (
           <div className="p-6 text-center text-ink-muted">{t('trash.trashIsEmpty')}</div>
         )}

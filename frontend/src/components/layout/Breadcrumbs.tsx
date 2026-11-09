@@ -12,7 +12,7 @@ export function Breadcrumbs({ items }: { items: B[] }) {
           {i > 0 && <ChevronRight size={14} />}
           <Link
             to={`/folder/${b.id}`}
-            className={`rounded px-1 hover:bg-surface-muted ${i === items.length - 1 ? 'font-semibold text-ink' : ''}`}
+            className={`rounded-md px-1.5 py-0.5 hover:bg-surface-muted ${i === items.length - 1 ? 'text-lg font-semibold tracking-tight text-ink' : ''}`}
           >
             {b.name || t('navigation.home')}
           </Link>

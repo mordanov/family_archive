@@ -46,3 +46,24 @@ async def test_password_protected_share(auth_client):
     assert ok.status_code == 200
     assert ok.content == b"top"
 
+
+
+async def test_folder_links_recursive(auth_client):
+    await _upload(auth_client, "top.txt", b"a")
+    sub = (await auth_client.post("/api/v1/folders", json={"parent_id": 1, "name": "sub"}, headers=HDR)).json()
+    init = await auth_client.post(
+        "/api/v1/uploads",
+        json={"folder_id": sub["id"], "filename": "inner.txt", "size_bytes": 1, "content_type": "text/plain"},
+        headers=HDR,
+    )
+    up = init.json()["upload"]
+    await auth_client.put(f"/api/v1/uploads/{up['id']}/parts/1", content=b"b",
+                          headers={**HDR, "Content-Type": "application/octet-stream"})
+    await auth_client.post(f"/api/v1/uploads/{up['id']}/complete", headers=HDR)
+
+    r = await auth_client.post("/api/v1/shares/folder-links", json={"folder_id": 1}, headers=HDR)
+    assert r.status_code == 200
+    by_path = {x["path"]: x["token"] for x in r.json()}
+    assert {"top.txt", "sub/inner.txt"} <= set(by_path)
+    dl = await auth_client.get(f"/api/v1/shares/{by_path['sub/inner.txt']}/download")
+    assert dl.content == b"b"

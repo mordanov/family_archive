@@ -34,9 +34,9 @@ function FolderNode({ id, name, depth, trail, activeFolderId }: NodeProps) {
     <div>
       <div
         style={{ paddingLeft: depth * 14 }}
-        className={`group flex items-center gap-0.5 rounded text-sm ${
+        className={`group flex items-center gap-0.5 rounded-lg text-sm transition-colors ${
           isActive
-            ? 'bg-accent/10 font-medium text-accent'
+            ? 'bg-accent/10 font-semibold text-accent'
             : 'text-ink hover:bg-surface-muted'
         }`}
       >
@@ -44,7 +44,7 @@ function FolderNode({ id, name, depth, trail, activeFolderId }: NodeProps) {
         {!isRoot ? (
           <button
             onClick={() => toggle(id)}
-            className="flex h-6 w-5 shrink-0 items-center justify-center rounded hover:bg-surface-strong"
+            className="flex h-7 w-5 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-surface-strong"
             tabIndex={-1}
           >
             {hasChildren
@@ -59,7 +59,7 @@ function FolderNode({ id, name, depth, trail, activeFolderId }: NodeProps) {
 
         <Link
           to={`/folder/${id}`}
-          className="flex min-w-0 flex-1 items-center gap-1.5 py-1 pr-2"
+          className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-2"
         >
           {isRoot ? <Home size={14} className="shrink-0" /> : <FolderIcon size={14} className="shrink-0" />}
           <span className="truncate">{name || t('navigation.home')}</span>
@@ -107,7 +107,7 @@ export function Sidebar() {
   return (
     <aside
       style={{ width: sidebarWidth }}
-      className="relative hidden shrink-0 overflow-y-auto border-r border-surface-strong bg-surface md:block"
+      className="relative hidden shrink-0 overflow-y-auto border-r border-surface-strong/70 bg-surface md:block"
     >
       <nav className="p-2">
         <FolderNode

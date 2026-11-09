@@ -33,7 +33,7 @@ export function SharePage() {
   const needPassword = m.requires_password && !unlocked
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
+    <div className="mx-auto max-w-2xl p-6">
       <header className="mb-4">
         <h1 className="text-xl font-semibold">{m.name}</h1>
         <p className="text-xs text-ink-muted">
@@ -45,16 +45,16 @@ export function SharePage() {
       </header>
 
       {needPassword && (
-        <div className="mb-4 rounded border border-surface-strong bg-surface p-4">
+        <div className="mb-4 rounded-xl2 border border-surface-strong bg-surface shadow-card p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold"><Lock size={16} /> {t('share.passwordRequired')}</div>
           <div className="flex gap-2">
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="flex-1 rounded border border-surface-strong px-3 py-2"
+              className="flex-1 input"
             />
-            <button onClick={tryUnlock} className="rounded bg-accent px-3 py-2 text-white hover:bg-accent-hover">
+            <button onClick={tryUnlock} className="btn-primary">
               {t('share.unlock')}
             </button>
           </div>
@@ -63,14 +63,14 @@ export function SharePage() {
       )}
 
       {!needPassword && m.target_type === 'file' && m.files?.[0] && (
-        <div className="rounded border border-surface-strong bg-surface p-4">
+        <div className="rounded-xl2 border border-surface-strong bg-surface shadow-card p-4">
           <div className="mb-1 font-medium">{m.files[0].name}</div>
           <div className="mb-3 text-xs text-ink-muted">
             {formatBytes(m.files[0].size_bytes)} • {m.files[0].content_type}
           </div>
           <a
             href={sharesApi.publicDownloadUrl(token)}
-            className="inline-flex items-center gap-1 rounded bg-accent px-3 py-2 text-white hover:bg-accent-hover"
+            className="btn-primary"
           >
             <Download size={16} /> {t('preview.download')}
           </a>
@@ -78,7 +78,7 @@ export function SharePage() {
       )}
 
       {!needPassword && m.target_type === 'folder' && (
-        <div className="rounded border border-surface-strong bg-surface">
+        <div className="rounded-xl2 border border-surface-strong bg-surface shadow-card">
           {(m.folders ?? []).map((f) => (
             <div key={`F${f.id}`} className="border-b border-surface-strong px-3 py-2 text-sm">📁 {f.name}</div>
           ))}

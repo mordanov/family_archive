@@ -36,16 +36,16 @@ export function NewFolderDialog({ open, onClose, parentId }: Props) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t('folder.folderName')}
-          className="rounded border border-surface-strong px-3 py-2 outline-none focus:border-accent"
+          className="input"
         />
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded px-3 py-1.5 text-ink-muted hover:bg-surface-muted">
+          <button type="button" onClick={onClose} className="btn-ghost">
             {t('common.cancel')}
           </button>
           <button
             type="submit"
             disabled={!name.trim() || m.isPending}
-            className="rounded bg-accent px-3 py-1.5 text-white hover:bg-accent-hover disabled:opacity-50"
+            className="btn-primary"
           >
             {t('folder.createFolder')}
           </button>

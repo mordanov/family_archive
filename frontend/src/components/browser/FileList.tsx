@@ -70,8 +70,8 @@ export function FileList({ folderId }: { folderId: number }) {
   const empty = !data?.folders.length && !data?.files.length
   if (empty)
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-16 text-ink-muted">
-        <FolderOpen size={36} />
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl2 border border-dashed border-surface-strong bg-surface p-16 text-ink-muted">
+        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent"><FolderOpen size={30} /></span>
         <p>{t('folder.thisFolder')} {t('folder.empty')}</p>
         <p className="text-xs">{t('folder.dragFilesHere')}</p>
       </div>
@@ -84,11 +84,12 @@ export function FileList({ folderId }: { folderId: number }) {
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between rounded border border-surface-strong bg-surface px-3 py-2 text-xs text-ink-muted">
+      <div className="mb-3 flex items-center justify-between px-1 text-xs text-ink-muted">
         {fileIds.length > 0 && (
           <label className="inline-flex items-center gap-2">
             <input
               type="checkbox"
+              className="h-4 w-4 rounded accent-[rgb(var(--accent))]"
               checked={allSelected}
               onChange={(e) => (e.target.checked ? selection.selectAllFiles(fileIds) : selection.clearFiles())}
             />
@@ -97,7 +98,7 @@ export function FileList({ folderId }: { folderId: number }) {
         )}
         <span>{t('file.selectedCount', { count: selectedInFolder + selectedFoldersInFolder })}</span>
       </div>
-      <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4' : ''}>
+      <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'rounded-xl2 border border-surface-strong bg-surface shadow-card'}>
         {data!.folders.map((f) => (
           <Row key={`f${f.id}`} kind="folder" item={f} parentId={folderId} viewMode={viewMode} showFolderCheckbox />
         ))}

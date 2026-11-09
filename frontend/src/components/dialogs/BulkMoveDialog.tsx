@@ -53,7 +53,7 @@ export function BulkMoveDialog({ open, selectedCount, initialFolderId, onClose, 
           ))}
         </div>
 
-        <div className="max-h-72 overflow-auto rounded border border-surface-strong bg-surface">
+        <div className="max-h-72 overflow-auto rounded-xl2 border border-surface-strong bg-surface shadow-card">
           {children.isLoading && <div className="p-3 text-sm text-ink-muted">{t('common.loading')}</div>}
           {!children.isLoading && subfolders.length === 0 && (
             <div className="p-3 text-sm text-ink-muted">{t('folder.noSubfolders')}</div>
@@ -70,12 +70,12 @@ export function BulkMoveDialog({ open, selectedCount, initialFolderId, onClose, 
         </div>
 
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded px-3 py-1.5 text-ink-muted hover:bg-surface-muted">
+          <button onClick={onClose} className="btn-ghost">
             {t('common.cancel')}
           </button>
           <button
             onClick={() => onConfirm(cursorId)}
-            className="rounded bg-accent px-3 py-1.5 text-white hover:bg-accent-hover"
+            className="btn-primary"
           >
             {t('common.moveHere')}
           </button>
