@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, User as UserIcon, Trash2, Archive, LayoutGrid, List } from 'lucide-react'
+import { LogOut, User as UserIcon, Trash2, Archive, Download, LayoutGrid, List } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api/auth'
@@ -47,6 +47,7 @@ export function Topbar() {
           to="/downloads"
           className="relative rounded p-2 text-ink-muted hover:bg-surface-muted"
           title={t('navigation.downloads')}
+        >
           <Download size={18} />
           {activeCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">
