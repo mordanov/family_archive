@@ -5,7 +5,7 @@ import io
 import json
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import FileResponse, StreamingResponse
 from PIL import ExifTags, Image, ImageOps
 
@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, require_csrf
 from app.core.errors import NotFound
+from app.media import pdf_pages
 from app.db.session import AsyncSessionLocal, get_db
 from app.models import File
 from app.repositories import files as files_repo
@@ -208,6 +209,42 @@ async def _video_meta(f: File) -> dict:
             out["audio_channels"] = stream.get("channels")
             out["audio_sample_rate"] = stream.get("sample_rate")
     return {k: v for k, v in out.items() if v is not None}
+
+
+@router.get("/{file_id}/pdf/info")
+async def pdf_info(file_id: int, user: CurrentUser):
+    async with AsyncSessionLocal() as db:
+        f = await files_repo.get(db, file_id)
+    if (f.content_type or "").lower() != "application/pdf":
+        raise NotFound("Not a PDF")
+    data = await _read_object(f.s3_key)
+    try:
+        count = await pdf_pages.page_count(data)
+    except Exception:
+        raise HTTPException(422, "Could not read PDF")
+    return {"page_count": count}
+
+
+@router.get("/{file_id}/pdf/page/{page_num}")
+async def pdf_page(file_id: int, page_num: int, user: CurrentUser):
+    if page_num < 0:
+        raise HTTPException(400, "page_num must be >= 0")
+    async with AsyncSessionLocal() as db:
+        f = await files_repo.get(db, file_id)
+    if (f.content_type or "").lower() != "application/pdf":
+        raise NotFound("Not a PDF")
+    data = await _read_object(f.s3_key)
+    try:
+        png = await pdf_pages.render_page(data, page_num)
+    except IndexError:
+        raise HTTPException(404, "Page not found")
+    except Exception:
+        raise HTTPException(422, "Could not render page")
+    return Response(
+        content=png,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 
 
 @router.post("/thumbnails/prewarm", dependencies=[Depends(require_csrf)])

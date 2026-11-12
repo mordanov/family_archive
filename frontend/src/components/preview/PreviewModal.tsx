@@ -21,6 +21,7 @@ import { ImagePreview } from './ImagePreview'
 import { VideoPreview } from './VideoPreview'
 import { AudioPreview } from './AudioPreview'
 import { ZipPreview } from './ZipPreview'
+import { PdfPreview } from './PdfPreview'
 import { FileInfoPanel } from './FileInfoPanel'
 
 const ZOOM_STEPS = [1, 1.5, 2, 3, 4]
@@ -243,7 +244,12 @@ export function PreviewModal() {
               <ZipPreview file={file} />
             </div>
           )}
-          {file && kind && !['image', 'video', 'audio', 'zip'].includes(kind) && (
+          {file && kind === 'pdf' && (
+            <div className="h-full w-full overflow-hidden">
+              <PdfPreview file={file} />
+            </div>
+          )}
+          {file && kind && !['image', 'video', 'audio', 'zip', 'pdf'].includes(kind) && (
             <div className="p-12 text-center text-white/60">
               {t('preview.notAvailable')}
             </div>

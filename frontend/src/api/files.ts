@@ -25,6 +25,9 @@ export const filesApi = {
   zipEntryUrl: (id: number, path: string) =>
     `${apiBase}/files/${id}/zip/entry?path=${encodeURIComponent(path)}`,
 
+  pdfInfo: (id: number) => api<{ page_count: number }>(`/files/${id}/pdf/info`),
+  pdfPageUrl: (id: number, page: number) => `${apiBase}/files/${id}/pdf/page/${page}`,
+
   attachTag: (file_id: number, tag_id: number) =>
     api<void>(`/files/${file_id}/tags/${tag_id}`, { method: 'POST' }),
   detachTag: (file_id: number, tag_id: number) =>
