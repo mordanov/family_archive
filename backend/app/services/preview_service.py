@@ -94,7 +94,7 @@ async def ensure_thumbnail(file_id: int, *, file: File | None = None) -> bool:
     f = file
 
     ct = (f.content_type or "").lower()
-    if not (ct.startswith("image/") or ct.startswith("video/")):
+    if not (ct.startswith("image/") or ct.startswith("video/") or ct == "application/pdf"):
         return False
 
     if thumbnail_store.path_for(f.uuid, settings.THUMBNAIL_MAX_SIDE).exists():
@@ -149,16 +149,27 @@ async def _do_video(f: File, *, include_poster: bool) -> dict:
 
 async def _do_pdf(f: File) -> dict:
     from app.media import pdf_pages  # lazy: pypdfium2 may not be installed in local dev
-    cache_path = thumbnail_store.pdf_page_path(f.uuid, 0)
-    if cache_path.exists():
+    thumb_path = thumbnail_store.path_for(f.uuid, settings.THUMBNAIL_MAX_SIDE)
+    if thumb_path.exists():
         return {}
-    data = await _read_object(f.s3_key)
+    pdf_cache = thumbnail_store.pdf_page_path(f.uuid, 0)
+    if pdf_cache.exists():
+        png = await asyncio.to_thread(pdf_cache.read_bytes)
+    else:
+        data = await _read_object(f.s3_key)
+        try:
+            png = await pdf_pages.render_page(data, 0)
+            await thumbnail_store.write_pdf_page(f.uuid, 0, png)
+        except Exception as e:
+            log.warning("PDF page 0 pre-render failed for %s: %s", f.id, e)
+            return {}
     try:
-        png = await pdf_pages.render_page(data, 0)
-        await thumbnail_store.write_pdf_page(f.uuid, 0, png)
+        thumb = await asyncio.to_thread(make_thumbnail, png, settings.THUMBNAIL_MAX_SIDE)
+        await thumbnail_store.write_thumbnail(f.uuid, thumb, settings.THUMBNAIL_MAX_SIDE)
     except Exception as e:
-        log.warning("PDF page 0 pre-render failed for %s: %s", f.id, e)
-    return {}
+        log.warning("PDF thumbnail failed for %s: %s", f.id, e)
+        return {}
+    return {"has_thumb": True}
 
 
 async def _do_audio(f: File) -> dict:

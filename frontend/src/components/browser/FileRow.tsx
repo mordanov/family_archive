@@ -84,10 +84,10 @@ export function Row({ kind, item, parentId, viewMode, showFileCheckbox = false, 
   const fileKind = file ? classifyMime(file.content_type, file.name) : 'other'
   const rowRef = useRef<HTMLDivElement | null>(null)
   const notifiedVisibleRef = useRef(false)
-  const canShowThumbnail = Boolean(isGrid && file && file.has_thumbnail && (fileKind === 'image' || fileKind === 'video') && !thumbFailed)
+  const canShowThumbnail = Boolean(isGrid && file && file.has_thumbnail && (fileKind === 'image' || fileKind === 'video' || fileKind === 'pdf') && !thumbFailed)
 
   useEffect(() => {
-    if (!onVisibleFile || !isGrid || !file || (fileKind !== 'image' && fileKind !== 'video')) {
+    if (!onVisibleFile || !isGrid || !file || (fileKind !== 'image' && fileKind !== 'video' && fileKind !== 'pdf')) {
       return
     }
     if (!rowRef.current || notifiedVisibleRef.current) {

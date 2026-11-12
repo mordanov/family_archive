@@ -45,7 +45,7 @@ export function FileList({ folderId }: { folderId: number }) {
   const handleVisibleFile = useCallback((file: FileItem) => {
     if (viewMode !== 'grid') return
     const kind = classifyMime(file.content_type, file.name)
-    if (kind !== 'image' && kind !== 'video') return
+    if (kind !== 'image' && kind !== 'video' && kind !== 'pdf') return
     if (sentIdsRef.current.has(file.id)) return
     queuedIdsRef.current.add(file.id)
     flushPrewarm()

@@ -34,7 +34,7 @@ async def thumbnail(file_id: int, user: CurrentUser, size: int = Query(256)):
     async with AsyncSessionLocal() as db:
         f = await files_repo.get(db, file_id)
     ct = (f.content_type or "").lower()
-    if not (ct.startswith("image/") or ct.startswith("video/")):
+    if not (ct.startswith("image/") or ct.startswith("video/") or ct == "application/pdf"):
         raise NotFound("Thumbnail not available")
 
     path = thumbnail_store.path_for(f.uuid, size)
