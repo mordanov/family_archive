@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { filesApi } from '@/api/files'
 import type { FileItem } from '@/types/api'
 
-const ZOOM_STEPS = [0.75, 1, 1.5, 2, 3]
+const ZOOM_STEPS = [0.5, 0.75, 1, 1.5, 2, 3]
 
 interface Props {
   file: FileItem
@@ -36,7 +36,7 @@ export function PdfPreview({ file }: Props) {
 
   return (
     <div className="flex h-full w-full flex-col items-center">
-      <div className="relative min-h-0 flex-1 overflow-auto flex items-start justify-center p-4">
+      <div className="relative min-h-0 flex-1 overflow-auto p-4">
         {!loaded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 size={32} className="animate-spin text-white/50" />
@@ -48,6 +48,8 @@ export function PdfPreview({ file }: Props) {
           alt={file.name}
           className="shadow-lg"
           style={{
+            display: 'block',
+            margin: '0 auto',
             width: `${zoom * 100}%`,
             maxWidth: zoom > 1 ? 'none' : '100%',
             opacity: loaded ? 1 : 0,
