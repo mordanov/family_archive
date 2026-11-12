@@ -5,7 +5,7 @@ import io
 import json
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from PIL import ExifTags, Image, ImageOps
 
@@ -233,17 +233,20 @@ async def pdf_page(file_id: int, page_num: int, user: CurrentUser):
         f = await files_repo.get(db, file_id)
     if (f.content_type or "").lower() != "application/pdf":
         raise NotFound("Not a PDF")
-    data = await _read_object(f.s3_key)
-    try:
-        png = await pdf_pages.render_page(data, page_num)
-    except IndexError:
-        raise HTTPException(404, "Page not found")
-    except Exception:
-        raise HTTPException(422, "Could not render page")
-    return Response(
-        content=png,
+    cache_path = thumbnail_store.pdf_page_path(f.uuid, page_num)
+    if not cache_path.exists():
+        data = await _read_object(f.s3_key)
+        try:
+            png = await pdf_pages.render_page(data, page_num)
+        except IndexError:
+            raise HTTPException(404, "Page not found")
+        except Exception:
+            raise HTTPException(422, "Could not render page")
+        await thumbnail_store.write_pdf_page(f.uuid, page_num, png)
+    return FileResponse(
+        cache_path,
         media_type="image/png",
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers={"Cache-Control": "public, max-age=604800, immutable"},
     )
 
 

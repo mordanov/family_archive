@@ -27,6 +27,17 @@ class ThumbnailStore:
 
         return await asyncio.to_thread(_write)
 
+    def pdf_page_path(self, file_uuid: UUID, page: int) -> Path:
+        return self.base_dir / str(file_uuid) / f"pdf_{page}.png"
+
+    async def write_pdf_page(self, file_uuid: UUID, page: int, data: bytes) -> Path:
+        path = self.pdf_page_path(file_uuid, page)
+        def _write() -> Path:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            return path
+        return await asyncio.to_thread(_write)
+
     async def delete_for(self, file_uuid: UUID) -> None:
         target = self.base_dir / str(file_uuid)
 

@@ -65,6 +65,8 @@ async def generate(file_id: int) -> None:
             update_kwargs = await _do_video(f, include_poster=True)
         elif ct.startswith("audio/"):
             update_kwargs = await _do_audio(f)
+        elif ct == "application/pdf":
+            update_kwargs = await _do_pdf(f)
     except Exception as e:
         log.exception("preview gen failed for %s: %s", f.id, e)
         return
@@ -143,6 +145,20 @@ async def _do_video(f: File, *, include_poster: bool) -> dict:
         await object_store.put_object(f"posters/{f.uuid}.jpg", poster, "image/jpeg")
         out["has_poster"] = True
     return out
+
+
+async def _do_pdf(f: File) -> dict:
+    from app.media import pdf_pages  # lazy: pypdfium2 may not be installed in local dev
+    cache_path = thumbnail_store.pdf_page_path(f.uuid, 0)
+    if cache_path.exists():
+        return {}
+    data = await _read_object(f.s3_key)
+    try:
+        png = await pdf_pages.render_page(data, 0)
+        await thumbnail_store.write_pdf_page(f.uuid, 0, png)
+    except Exception as e:
+        log.warning("PDF page 0 pre-render failed for %s: %s", f.id, e)
+    return {}
 
 
 async def _do_audio(f: File) -> dict:
