@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid as uuid_lib
 
-from fastapi import APIRouter, Depends, Path, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Path, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, require_csrf
@@ -83,6 +83,51 @@ async def upload_part(
 async def complete(upload_id: uuid_lib.UUID, request: Request, user: CurrentUser, db: AsyncSession = Depends(get_db)):
     file = await upload_service.complete_upload(db, upload_id=upload_id, user_id=user.id, ip=_ip(request))
     return UploadCompleteOut(file=FileOut.model_validate(file))
+
+
+@router.post("/sortout", response_model=FileOut)
+async def sortout(
+    request: Request,
+    file: UploadFile,
+    folder_id: int = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Single-shot upload for the file-uploader bot; authenticated via X-API-Key header."""
+    if not settings.SORTOUT_API_KEY or request.headers.get("X-API-Key") != settings.SORTOUT_API_KEY:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+
+    body = await file.read()
+    filename = file.filename or "upload"
+    content_type = file.content_type or "application/octet-stream"
+    ip = request.client.host if request.client else None
+
+    result = await upload_service.init_upload(
+        db,
+        user_id=settings.SORTOUT_USER_ID,
+        folder_id=folder_id,
+        filename=filename,
+        size_bytes=len(body),
+        content_type=content_type,
+        ip=ip,
+    )
+    if isinstance(result, dict) and result.get("action") == "skipped":
+        return FileOut.model_validate(result["file"])
+
+    up = result
+    chunk = settings.CHUNK_SIZE_BYTES
+    for i in range(up.total_parts):
+        await upload_service.receive_part(
+            db,
+            upload_id=up.id,
+            user_id=settings.SORTOUT_USER_ID,
+            part_number=i + 1,
+            body=body[i * chunk : (i + 1) * chunk],
+        )
+
+    completed = await upload_service.complete_upload(
+        db, upload_id=up.id, user_id=settings.SORTOUT_USER_ID, ip=ip
+    )
+    return FileOut.model_validate(completed)
 
 
 @router.delete("/{upload_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_csrf)])

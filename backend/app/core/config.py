@@ -53,6 +53,10 @@ class Settings(BaseSettings):
             return [str(s).strip() for s in parsed if str(s).strip()]
         return [s.strip() for s in value.split(",") if s.strip()]
 
+    # Sortout bot API key (machine-to-machine upload, no session required)
+    SORTOUT_API_KEY: str = ""
+    SORTOUT_USER_ID: int = 1  # DB user that owns files uploaded via the bot
+
     # Misc
     LOG_LEVEL: str = "INFO"
     ENV: str = "production"
