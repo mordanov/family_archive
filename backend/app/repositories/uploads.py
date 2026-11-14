@@ -13,6 +13,7 @@ from app.models import Upload, UploadPart
 async def get(db: AsyncSession, upload_id: uuid.UUID, user_id: int | None = None) -> Upload:
     res = await db.execute(
         select(Upload).options(selectinload(Upload.parts)).where(Upload.id == upload_id)
+        .execution_options(populate_existing=True)
     )
     up = res.scalar_one_or_none()
     if not up or (user_id is not None and up.user_id != user_id):
